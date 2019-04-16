@@ -1,0 +1,12 @@
+source https://www.nuget.org/api/v3
+
+group PoC_Evernote
+source https://www.nuget.org/api/v3
+storage: none
+framework: net472
+
+group PoC_AzureSpeech
+source https://www.nuget.org/api/v3
+storage: none
+framework: net472
+

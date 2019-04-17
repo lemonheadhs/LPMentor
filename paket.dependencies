@@ -1,9 +1,14 @@
-source https://www.nuget.org/api/v3
+source https://www.nuget.org/api/v2
+storage: none
+framework: netcoreapp2.2
+    nuget evernote-cloud-sdk-windows
 
 group PoC_Evernote
-source https://www.nuget.org/api/v3
+source https://www.nuget.org/api/v2
 storage: none
 framework: net472
+    nuget evernote-cloud-sdk-windows
+    nuget PreMailer.Net
 
 group PoC_AzureSpeech
 source https://www.nuget.org/api/v3

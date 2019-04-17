@@ -1,0 +1,26 @@
+STORAGE: NONE
+RESTRICTION: == netcoreapp2.2
+NUGET
+  remote: https://www.nuget.org/api/v2
+    evernote-cloud-sdk-windows (1.0.8)
+
+GROUP PoC_AzureSpeech
+STORAGE: NONE
+RESTRICTION: == net472
+
+GROUP PoC_Evernote
+STORAGE: NONE
+RESTRICTION: == net472
+NUGET
+  remote: https://www.nuget.org/api/v2
+    AngleSharp (0.11)
+      System.Text.Encoding.CodePages (>= 4.5)
+    evernote-cloud-sdk-windows (1.0.8)
+      PreMailer.Net (>= 1.2.7)
+      SgmlReader (>= 1.8.11)
+    PreMailer.Net (2.0.1)
+      AngleSharp (>= 0.9.11)
+    SgmlReader (1.8.11)
+    System.Runtime.CompilerServices.Unsafe (4.5.2)
+    System.Text.Encoding.CodePages (4.5.1)
+      System.Runtime.CompilerServices.Unsafe (>= 4.5.2)

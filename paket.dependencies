@@ -9,6 +9,7 @@ storage: none
 framework: net472
     nuget evernote-cloud-sdk-windows
     nuget PreMailer.Net
+    nuget FSharp.Data
 
 group PoC_AzureSpeech
 source https://www.nuget.org/api/v3

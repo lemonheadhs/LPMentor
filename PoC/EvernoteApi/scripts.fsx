@@ -11,15 +11,17 @@ Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
 let cwd = __SOURCE_DIRECTORY__
 
 
-type Config = JsonProvider<"""{ "devToken": "token", "noteStoreUrl": "url" }""">
+type Config = JsonProvider<"""{ "devToken": "token", "noteStoreUrl": "url", "consumerKey": "key", "consumerSecret": "secret" }""">
 let config = Config.Load(Path.Combine [|cwd; "config.json"|])
-let authConfig = (config.DevToken, config.NoteStoreUrl)
+let devTokenAuthConfig = (config.DevToken, config.NoteStoreUrl)
+let oauthConfig = (config.ConsumerKey, config.ConsumerSecret, "sandbox.yinxiang.com")
 
-
-ENSession.SetSharedSessionDeveloperToken authConfig
+// ENSession.SetSharedSessionDeveloperToken devTokenAuthConfig
+ENSession.SetSharedSessionConsumerKey (config.ConsumerKey, config.ConsumerSecret, "app.yinxiang.com")
     
 if not <| ENSession.SharedSession.IsAuthenticated then
     ENSession.SharedSession.AuthenticateToEvernote()
+
 
 let myNotebookList = ENSession.SharedSession.ListNotebooks()
 let myPlainNote = ENNote()
@@ -51,28 +53,30 @@ System.Text.Encoding.UTF8.GetString(noteData)
 
 open EvernoteSDK.Advanced
 
-ENSessionAdvanced.SetSharedSessionDeveloperToken authConfig
+// ENSessionAdvanced.SetSharedSessionDeveloperToken authConfig
+
+ENSessionAdvanced.SetSharedSessionConsumerKey (config.ConsumerKey, config.ConsumerSecret)
+
 if not <| ENSessionAdvanced.SharedSession.IsAuthenticated then
   ENSessionAdvanced.SharedSession.AuthenticateToEvernote()
 
-let filter = NoteStore.NoteFilter()
-
-filter.Words <- "notebook:LPMentor"
-// filter.NotebookGuid <- ""
-// filter.TagGuids <- [|""|] |> ResizeArray
-filter.Ascending <- false
-
 let spec = NoteStore.NotesMetadataResultSpec()
-
 spec.IncludeTitle <- true
 
-let store = ENSessionAdvanced.SharedSession.PrimaryNoteStore
-let ourNoteList = store.FindNotesMetadata(filter, 0, 100, spec)
+let primaryStore = ENSessionAdvanced.SharedSession.PrimaryNoteStore
 
-ourNoteList.Notes
-|> Seq.map (fun m -> store.GetNote(m.Guid, true, false, false, false).Content)
-    // Content include xml tags
+
+let searchNote (store: ENNoteStoreClient) spec searchTerms =
+  let filter = NoteStore.NoteFilter()
+  filter.Words <- searchTerms
+  filter.Ascending <- false
+  store.FindNotesMetadata(filter, 0, 100, spec)
+
+let naiveSearch = searchNote primaryStore spec
+
+naiveSearch "world" // """created:month-3"""
+
 
 
 // search syntax!!
-
+// only oauth authenticated approach have permission to search

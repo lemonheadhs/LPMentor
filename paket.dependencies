@@ -12,7 +12,9 @@ framework: net472
     nuget FSharp.Data
 
 group PoC_AzureSpeech
-source https://www.nuget.org/api/v3
+source https://www.nuget.org/api/v2
 storage: none
 framework: net472
-
+    nuget Microsoft.CognitiveServices.Speech
+    nuget TaskBuilder.fs
+    nuget FSharp.Data

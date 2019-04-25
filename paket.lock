@@ -7,6 +7,16 @@ NUGET
 GROUP PoC_AzureSpeech
 STORAGE: NONE
 RESTRICTION: == net472
+NUGET
+  remote: https://www.nuget.org/api/v2
+    FSharp.Core (4.6.2)
+    FSharp.Data (3.1.1)
+      FSharp.Core (>= 4.0.0.1)
+    Microsoft.CognitiveServices.Speech (1.4.2)
+    System.ValueTuple (4.5)
+    TaskBuilder.fs (2.1)
+      FSharp.Core (>= 4.1.17)
+      System.ValueTuple (>= 4.4)
 
 GROUP PoC_Evernote
 STORAGE: NONE

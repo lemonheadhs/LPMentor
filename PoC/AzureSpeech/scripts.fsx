@@ -51,7 +51,7 @@ let SynthesisToSpeakerAsync text =
     }
             
 "hello, lemonhead" |> SynthesisToSpeakerAsync |> Task.WaitAll
-    
+    // System.DllNotFoundException: 无法加载 DLL“Microsoft.CognitiveServices.Speech.core.dll”: 找不到指定的模块。
 
     
         

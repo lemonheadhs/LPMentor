@@ -18,3 +18,4 @@ framework: net472
     nuget Microsoft.CognitiveServices.Speech
     nuget TaskBuilder.fs
     nuget FSharp.Data
+    nuget Http.fs

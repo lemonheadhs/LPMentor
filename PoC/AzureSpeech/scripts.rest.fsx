@@ -66,6 +66,8 @@ let testTTS () =
         |> Request.setHeader (Custom ("X-Microsoft-OutputFormat", "raw-16khz-16bit-mono-pcm"))
         |> Request.setHeader (ContentType.create ("application", "ssml+xml") |> ContentType)
         |> BearerAuthHeader (getRefreshedToken())
+        |> Request.setHeader (Custom ("Host", "eastasia.tts.speech.microsoft.com"))
+        |> Request.setHeader (UserAgent "Fsharp Interactive")
         |> Request.body (BodyString textStr)
     job {
         let! resp = getResponse req

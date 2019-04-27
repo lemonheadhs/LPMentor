@@ -2,3 +2,7 @@
 .paket/paket.exe
 PoC/EvernoteApi/config.json
 PoC/AzureSpeech/config.json
+
+**/bin/
+**/obj/
+

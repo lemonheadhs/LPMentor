@@ -50,13 +50,47 @@ let SynthesisToSpeakerAsync text =
         Console.WriteLine("Done ...")
     }
             
-"hello, lemonhead" |> SynthesisToSpeakerAsync |> Task.WaitAll
+// "hello, lemonhead" |> SynthesisToSpeakerAsync |> Task.WaitAll
     // System.DllNotFoundException: 无法加载 DLL“Microsoft.CognitiveServices.Speech.core.dll”: 找不到指定的模块。
 
     
+let sampleText = """
+Work with Azure Functions Proxies
+2018/01/22
+作者
+Alex Karcher
+This article explains how to configure and work with Azure Functions Proxies. With this feature, you can specify endpoints on your function app that are implemented by another resource. You can use these proxies to break a large API into multiple function apps (as in a microservice architecture), while still presenting a single API surface for clients.
+
+This is reference information for Azure Functions developers. If you're new to Azure Functions, start with the following resources:
+
+Create your first function: C#, JavaScript, Java, or Python.
+Azure Functions developer reference.
+Language-specific reference: C#, C# script, F#, Java, JavaScript, or Python.
+Azure Functions triggers and bindings concepts.
+Code and test Azure Functions locally.
+
+
+Standard Functions billing applies to proxy executions. For more information, see Azure Functions pricing.
+
+Create a proxy
+This section shows you how to create a proxy in the Functions portal.
+"""
+
+let test () =
+    let config = SpeechConfig.FromSubscription(configJson.Key, configJson.Region)
+
+    task {
+        use synthesizer = new SpeechSynthesizer(config)
+        //Microsoft.CognitiveServices.Speech.
+        let! result = synthesizer.SpeakTextAsync sampleText
         
-
-
+        use audioStream = AudioDataStream.FromResult result
+        do! audioStream.SaveToWaveFileAsync "test.wav"
+    }
+   
+#time "on"   
+(test ()).Wait()
+#time "off"
 
 
 

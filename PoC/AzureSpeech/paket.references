@@ -1,3 +1,4 @@
 group PoC_AzureSpeech
 Microsoft.CognitiveServices.Speech
 FSharp.Data
+TaskBuilder.fs

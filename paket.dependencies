@@ -19,3 +19,4 @@ framework: net472
     nuget TaskBuilder.fs
     nuget FSharp.Data
     nuget Http.fs
+    nuget System.Net.Http

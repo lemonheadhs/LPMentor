@@ -53,12 +53,16 @@ System.Text.Encoding.UTF8.GetString(noteData)
 
 open EvernoteSDK.Advanced
 
-// ENSessionAdvanced.SetSharedSessionDeveloperToken authConfig
+// ENSessionAdvanced.SetSharedSessionDeveloperToken devTokenAuthConfig
 
 ENSessionAdvanced.SetSharedSessionConsumerKey (config.ConsumerKey, config.ConsumerSecret)
 
 if not <| ENSessionAdvanced.SharedSession.IsAuthenticated then
   ENSessionAdvanced.SharedSession.AuthenticateToEvernote()
+
+// --------- search ?
+
+(*
 
 let spec = NoteStore.NotesMetadataResultSpec()
 spec.IncludeTitle <- true
@@ -76,7 +80,54 @@ let naiveSearch = searchNote primaryStore spec
 
 naiveSearch "world" // """created:month-3"""
 
-
-
+*)
 // search syntax!!
 // only oauth authenticated approach have permission to search
+// and it seems that sandbox environment does no support search
+
+// --------- get all text content ?
+// get by guid id
+
+let notebooks = ENSessionAdvanced.SharedSession.ListNotebooks()
+notebooks.[0]
+
+let noteStore =
+  ENSessionAdvanced.SharedSession.PrimaryNoteStore
+
+noteStore.ListNotebooks() |> Seq.map (fun nb -> nb.Name,nb.Guid)
+
+noteStore
+
+let inbox = noteStore.GetNotebook "3c9f6f3f-3ba8-4a2f-b236-a8588b91ea7b"
+
+let note1 = 
+  noteStore.GetNote ("e93720a3-91f0-4503-82e7-d125256a7cc5", 
+                     withContent=true, 
+                     withResourcesData=true, 
+                     withResourcesRecognition=true, 
+                     withResourcesAlternateData=true)
+let note1Content =
+  noteStore.GetNoteContent "e93720a3-91f0-4503-82e7-d125256a7cc5"
+
+  // the content I get from API are in ENML mark up format, but I just want the pure inner text
+
+// ----------- use FSharp.Data Xml TP to retrieve text
+
+open FSharp.Data.HtmlDocument
+
+let test =
+  note1Content |> HtmlDocument.Parse
+
+test.Descendants() 
+|> Seq.head
+|> HtmlNode.innerText
+
+(fun _ ->
+  use sw = System.IO.StreamWriter("content.txt")
+  sw.Write (note1Content)
+) ()
+
+note1.TagNames
+
+
+

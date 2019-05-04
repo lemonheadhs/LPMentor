@@ -1,0 +1,3 @@
+group PoC_AzureStorageTP
+FSharp.Azure.StorageTypeProvider
+FSharp.Core

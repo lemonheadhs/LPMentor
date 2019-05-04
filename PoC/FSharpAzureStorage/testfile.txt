@@ -1,0 +1,2 @@
+Moving your script code into the implementation file
+The previous sections in this article demonstrated a common first step in writing F# code: writing an initial function and executing it interactively with FSI. This is known as REPL-driven development, where REPL stands for "Read-Evaluate-Print Loop". It's a great way to experiment with functionality until you have something working.

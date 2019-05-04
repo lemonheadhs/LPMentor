@@ -2,6 +2,7 @@ source https://www.nuget.org/api/v2
 storage: none
 framework: netcoreapp2.2
     nuget evernote-cloud-sdk-windows
+nuget FSharp.Core
 
 group PoC_Evernote
 source https://www.nuget.org/api/v2
@@ -20,3 +21,15 @@ framework: net472
     nuget FSharp.Data
     nuget Http.fs
     nuget System.Net.Http
+    nuget FSharp.Azure.StorageTypeProvider ~> 1.9
+
+group PoC_AzureStorageTP
+source https://www.nuget.org/api/v2
+storage: none
+framework: net472
+    nuget FSharp.Core
+    nuget FSharp.Azure.StorageTypeProvider
+    nuget WindowsAzure.Storage 9.3.2
+    nuget System.Runtime
+    nuget System.IO
+

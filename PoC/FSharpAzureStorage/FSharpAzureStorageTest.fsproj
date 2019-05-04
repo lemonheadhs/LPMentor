@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="testfile.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

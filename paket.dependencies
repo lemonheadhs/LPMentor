@@ -1,8 +1,10 @@
 source https://www.nuget.org/api/v2
 storage: none
-framework: netcoreapp2.2
+framework: netcoreapp2.1
     nuget evernote-cloud-sdk-windows
-nuget FSharp.Core
+    nuget FSharp.Core
+    nuget Microsoft.NET.Sdk.Functions
+    nuget TaskBuilder.fs
 
 group PoC_Evernote
 source https://www.nuget.org/api/v2

@@ -6,3 +6,5 @@ PoC/AzureSpeech/config.json
 **/bin/
 **/obj/
 
+src/WebhookFn2.0/
+src/WebhookFnFsx

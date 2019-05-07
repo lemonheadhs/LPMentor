@@ -1,39 +1,28 @@
-namespace WebhookFn
+﻿module IngestNote
 
 open System
-open System.IO
-open System.Threading.Tasks
+open System.Net
+open System.Net.Http
 open FSharp.Control.Tasks.V2
-open Microsoft.AspNetCore.Mvc
-open Microsoft.Azure.WebJobs
-open Microsoft.Azure.WebJobs.Extensions.Http
-open Microsoft.AspNetCore.Http
-open Microsoft.Extensions.Logging
-open Newtonsoft.Json
+open Microsoft.Azure.WebJobs.Host
 
+// public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, TraceWriter log)
+let Run(
+        req: HttpRequestMessage, log: TraceWriter) =
 
-module IngestNote =
+    log.Info("F# HTTP trigger function processed a request.")
 
-    [<FunctionName "IngestNote">]
-    let Run(
-            [<HttpTrigger(AuthorizationLevel.Anonymous, Route = "{*any}")>] req: HttpRequest,
-            log: ILogger) =
-    
-        log.LogInformation("C# HTTP trigger function processed a request.")
+    // parse query parameter
+    let name = 
+        req.GetQueryNameValuePairs()
+        |> Seq.find (fun q -> String.Compare(q.Key, "name", true) = 0)
+        |> fun q -> q.Value
 
-        let name = req.Query.["name"]
-
-        task {
-            let! requestBody = (StreamReader(req.Body)).ReadToEndAsync()
-            let data = JsonConvert.DeserializeObject(requestBody)
-
-            return (
-                if not <| isNull(data) then
-                    (sprintf "Hello, %s" (data.ToString()) |> OkObjectResult) :> IActionResult
-                else
-                    BadRequestObjectResult ("Please pass a name on the query string or in the request body") :> IActionResult)
-        }
-
-    
-
+    task {
+        return (
+            if isNull name then
+                req.CreateResponse(HttpStatusCode.BadRequest, "Please pass a name on the query string or in the request body")
+            else
+                req.CreateResponse(HttpStatusCode.OK, "Hello " + name))        
+    }
 

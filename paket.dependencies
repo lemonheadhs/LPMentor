@@ -1,10 +1,21 @@
 source https://www.nuget.org/api/v2
 storage: none
 framework: netcoreapp2.1
-    nuget evernote-cloud-sdk-windows
     nuget FSharp.Core
     nuget Microsoft.NET.Sdk.Functions
     nuget TaskBuilder.fs
+
+group Webhook
+source https://www.nuget.org/api/v2
+storage: none
+framework: net472
+    nuget evernote-cloud-sdk-windows
+    nuget Microsoft.NET.Sdk.Functions
+    nuget FSharp.Core
+    nuget TaskBuilder.fs
+    nuget Microsoft.AspNet.WebApi.Core
+    nuget Microsoft.AspNet.WebApi.Client
+    nuget Microsoft.Azure.WebJobs
 
 group PoC_Evernote
 source https://www.nuget.org/api/v2

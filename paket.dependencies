@@ -1,9 +1,12 @@
 source https://www.nuget.org/api/v2
 storage: none
 framework: netcoreapp2.1
+    nuget evernote-cloud-sdk-windows
     nuget FSharp.Core
     nuget Microsoft.NET.Sdk.Functions
     nuget TaskBuilder.fs
+    nuget FSharp.Data
+    nuget FSharp.Azure.StorageTypeProvider
 
 group Webhook
 source https://www.nuget.org/api/v2
@@ -11,7 +14,7 @@ storage: none
 framework: net472
     nuget evernote-cloud-sdk-windows
     nuget Microsoft.NET.Sdk.Functions
-    nuget FSharp.Core
+    nuget FSharp.Core 4.2.3
     nuget TaskBuilder.fs
     nuget Microsoft.AspNet.WebApi.Core
     nuget Microsoft.AspNet.WebApi.Client

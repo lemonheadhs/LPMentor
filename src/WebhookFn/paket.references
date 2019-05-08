@@ -1,8 +1,6 @@
-group Webhook
-evernote-cloud-sdk-windows
 FSharp.Core
-TaskBuilder.fs
-Microsoft.AspNet.WebApi.Core
-Microsoft.AspNet.WebApi.Client
-Microsoft.Azure.WebJobs
+FSharp.Data
+FSharp.Azure.StorageTypeProvider
+evernote-cloud-sdk-windows
 Microsoft.NET.Sdk.Functions
+TaskBuilder.fs

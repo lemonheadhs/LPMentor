@@ -18,9 +18,32 @@ open EvernoteSDK.Advanced
 open Evernote.EDAM
 open EvernoteSDK
 
-
 module IngestNote =
-
+    [<CLIMutable>]
+    type NoteInfo = {
+        Text: string
+        Topic: string
+        Section: string
+        Order: int
+    }
+    type NoteInfoEx = {
+        Partition: string
+        RowId: string
+        BaseInfo: NoteInfo
+    }
+    [<CLIMutable>]
+    type AudioNoteInfo = {
+        Text: string
+        Topic: string
+        Section: string
+        Order: int
+        BlobUrl: string
+    }
+    type AudioNoteInfoEx = {
+        Partition: string
+        RowId: string
+        BaseInfo: AudioNoteInfo
+    }
     let FetchNoteContent noteGuid =
 
         // ENSessionAdvanced.SetSharedSessionConsumerKey ("lemonhead-hs", "324f03fcfb2577bd")
@@ -77,11 +100,22 @@ module IngestNote =
         Reason: EvernoteNotification
         Guid_: string
     }
+    type Option<'T> with
+        static member ap f opt =
+            match f, opt with
+            | Some fn, Some value -> Some (fn value)
+            | _ -> None
+    let (<!>) = Option.map
+    let (<*>) = Option.ap
     let parseParams (req: HttpRequest) =
-        let queryDict = req.Query |> Seq.map (fun i -> i.Key, i.Value) |> dict
-        let WebhookParamCtr userId guid reason notebookGuid =
+        let queryDict = req.Query |> Seq.map (fun i -> i.Key, i.Value.ToString()) |> Map
+        let queryVal key = Map.tryFind key queryDict
+        let webhookParamCtr userId guid reason notebookGuid =
             { UserId = userId; Guid_ = guid; Reason = reason; NotebookGuid = notebookGuid }
-        ()
+        webhookParamCtr <!> (queryVal "userId") 
+                        <*> (queryVal "guid") 
+                        <*> (queryVal "reason" |> Option.bind EvernoteNotification.Parse)
+                        <*> (Some (queryVal "notebookGuid")) 
 
     [<FunctionName "IngestNote">]
     let Run(
@@ -90,18 +124,18 @@ module IngestNote =
     
         log.LogInformation("F# HTTP trigger function processed a request.")
 
-        let name = req.Query.["name"]
-        let note1Content = FetchNoteContent "e93720a3-91f0-4503-82e7-d125256a7cc5" |> markupInnerText
+        match parseParams req with
+        | None -> task { return (BadRequestObjectResult ("Please pass a name on the query string or in the request body") :> IActionResult) }
+        | Some webhookParams ->
 
-        task {
-            do! noteQueue.Enqueue (note1Content, connectionString= Environment.GetEnvironmentVariable("connStr"))
-            return (
-                if true then    
+            let note1Content = 
+                FetchNoteContent webhookParams.Guid_ |> markupInnerText
+                // FetchNoteContent "e93720a3-91f0-4503-82e7-d125256a7cc5" |> markupInnerText
 
-                    (note1Content |> OkObjectResult) :> IActionResult
-                else
-                    BadRequestObjectResult ("Please pass a name on the query string or in the request body") :> IActionResult)
-        }
+            task {
+                do! noteQueue.Enqueue (note1Content, connectionString= Environment.GetEnvironmentVariable("connStr"))
+                return ((note1Content |> OkObjectResult) :> IActionResult)
+            }
 
     
 // when introduced Microsoft.NET.Sdk.Functions v1.0.27 (together with evernote-cloud-sdk-windows) , run dotnet build will fail with:

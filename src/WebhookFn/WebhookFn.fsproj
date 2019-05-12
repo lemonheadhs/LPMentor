@@ -3,6 +3,11 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <AzureFunctionsVersion>v2</AzureFunctionsVersion>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
+  </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="IngestNote.fs" />

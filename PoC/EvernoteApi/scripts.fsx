@@ -130,4 +130,5 @@ test.Descendants()
 note1.TagNames
 
 note1.Attributes
-
+note1.UpdateSequenceNum
+noteStore.GetNoteTagNames "e93720a3-91f0-4503-82e7-d125256a7cc5"

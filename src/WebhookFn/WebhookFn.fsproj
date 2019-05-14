@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Evernote.fs" />
     <Compile Include="IngestNote.fs" />
   </ItemGroup>
 

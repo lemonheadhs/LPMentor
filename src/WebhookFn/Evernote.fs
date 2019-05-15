@@ -91,13 +91,37 @@ let tryParseAudioNoteMetadata text =
                         <*> (extract sectionRgx "section" metadataString)
                         <*> (extract orderRgx "order" metadataString |> Option.map Convert.ToInt32))
 
+let innerTextWithLineBreak (n: HtmlNode) =
+    let blockElems = 
+        [| "p"; "h1"; "h2"; "h3"; "h4"; "h5"; "h6"; "ol"; "ul"; 
+           "pre"; "address"; "blockquote"; "dl"; "div"; 
+           "fieldset"; "form"; "hr"; "noscript"; "table"; "en-note" |]
+        |> Set
+    let exclusions = ["style" ; "script"]
+    let rec innerTxt' (n': HtmlNode) =
+        let name = n'.Name()
+        ((lazy (String.IsNullOrEmpty name)), lazy (exclusions |> List.forall ((<>) name)))
+        |> function
+        | (Lazy true), _ -> n'.InnerText()
+        | _, Lazy false -> ""
+        | _ ->
+            seq { 
+                if blockElems |> Set.contains name then
+                    let elems = n'.Elements()
+                    for e in elems do
+                        yield innerTxt' e
+                    yield "\n"
+                else
+                    yield n'.InnerText() }
+            |> String.Concat
+    innerTxt' n
+
 let markupInnerText markupString =
     let doc = HtmlDocument.Parse markupString
     doc.DescendantsWithPath (["en-note"])
     |> Seq.head
     |> fst
-    |> fun n -> n.Descendants ((fun _ -> true), recurseOnMatch= false)
-    |> Seq.map HtmlNode.innerText |> fun ls -> String.Join("\n", ls)
+    |> innerTextWithLineBreak
 
 let FetchNoteContent noteGuid =
     // ENSessionAdvanced.SetSharedSessionConsumerKey ("lemonhead-hs", "324f03fcfb2577bd")

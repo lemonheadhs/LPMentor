@@ -10,6 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="AzureStorage.fs" />
+    <Compile Include="AzureSpeech.fs" />
+    <Compile Include="SynthesizeNoteSpeech.fs" />
     <Compile Include="Evernote.fs" />
     <Compile Include="IngestNote.fs" />
   </ItemGroup>

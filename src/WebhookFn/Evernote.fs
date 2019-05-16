@@ -1,4 +1,4 @@
-module WebhookFn.Evernote
+module LPMentor.WebhookFn.Evernote
 
 open System
 open System.Text.RegularExpressions
@@ -61,6 +61,7 @@ type AudioNoteMetadata = {
     Topic: string
     Section: string
     Order: int
+    Lang: string
 }
 let tryParseAudioNoteMetadata text =
     (* recognize the following text pattern and parse it:
@@ -68,6 +69,7 @@ let tryParseAudioNoteMetadata text =
         Topic: *****
         Section: *****
         Order: 12
+        Lang: en/cn
         </lpmentor>
     *)
     let extract (rgx: Regex) (groupName: string) text =
@@ -81,15 +83,17 @@ let tryParseAudioNoteMetadata text =
     let topicRgx = Regex("Topic: (?<topic>.*)")
     let sectionRgx = Regex("Section: (?<section>.*)")
     let orderRgx = Regex("Order: (?<order>\d*)")
-    let genMetadata topic section order =
-        { Topic = topic; Section = section; Order = order }
+    let langRgx = Regex("Lang: (?<lang>.*)")
+    let genMetadata topic section order lang =
+        { Topic = topic; Section = section; Order = order; Lang = lang }
     text
     |> extract lpmentorRgx "metadata"
     |> Option.bind 
         (fun metadataString ->
             genMetadata <!> (extract topicRgx "topic" metadataString)
                         <*> (extract sectionRgx "section" metadataString)
-                        <*> (extract orderRgx "order" metadataString |> Option.map Convert.ToInt32))
+                        <*> (extract orderRgx "order" metadataString |> Option.map Convert.ToInt32)
+                        <*> (extract langRgx "lang" metadataString))
 
 let innerTextWithLineBreak (n: HtmlNode) =
     let blockElems = 

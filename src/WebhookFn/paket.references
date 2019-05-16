@@ -4,3 +4,5 @@ FSharp.Azure.StorageTypeProvider
 evernote-cloud-sdk-windows
 Microsoft.NET.Sdk.Functions
 TaskBuilder.fs
+Microsoft.Azure.WebJobs.Extensions.Storage
+Http.fs

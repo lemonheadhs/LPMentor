@@ -1,4 +1,4 @@
-namespace WebhookFn
+namespace LPMentor.WebhookFn
 
 open System
 open FSharp.Control.Tasks.V2
@@ -7,42 +7,12 @@ open Microsoft.Azure.WebJobs
 open Microsoft.Azure.WebJobs.Extensions.Http
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
-open FSharp.Azure.StorageTypeProvider
 open FSharp.Azure.StorageTypeProvider.Table
+open LPMentor.Storage
 
 open Evernote
 
 module IngestNote =
-    [<CLIMutable>]
-    type NoteInfo = {
-        Text: string
-        Topic: string
-        Section: string
-        Order: int
-        // lang: ?? en / cn
-    }
-    type NoteInfoEx = {
-        Partition: string
-        RowId: string
-        BaseInfo: NoteInfo
-    }
-    [<CLIMutable>]
-    type AudioNoteInfo = {
-        Text: string
-        Topic: string
-        Section: string
-        Order: int
-        BlobUrl: string
-    }
-    type AudioNoteInfoEx = {
-        Partition: string
-        RowId: string
-        BaseInfo: AudioNoteInfo
-    }
-
-    type Azure = AzureTypeProvider<"UseDevelopmentStorage=true">
-    let noteQueue = Azure.Queues.notes
-    let lpnote = Azure.Tables.LPNote
 
     [<FunctionName "IngestNote">]
     let Run(
@@ -68,6 +38,7 @@ module IngestNote =
                         Topic = metadata.Topic
                         Section = metadata.Section
                         Order = metadata.Order
+                        Lang = metadata.Lang
                     }
                 }
                 

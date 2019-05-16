@@ -4,6 +4,8 @@ framework: netcoreapp2.1
     nuget evernote-cloud-sdk-windows
     nuget FSharp.Core
     nuget Microsoft.NET.Sdk.Functions
+    nuget Microsoft.Azure.WebJobs.Extensions.Storage
+    nuget Http.fs
     nuget TaskBuilder.fs
     nuget FSharp.Data
     nuget FSharp.Azure.StorageTypeProvider

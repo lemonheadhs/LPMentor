@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="AzureSpeech.fs" />
     <Compile Include="SynthesizeNoteSpeech.fs" />
   </ItemGroup>
   

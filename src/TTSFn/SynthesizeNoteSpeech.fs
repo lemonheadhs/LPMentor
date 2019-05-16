@@ -9,7 +9,8 @@ module SynthesizeNoteSpeech =
 
     [<FunctionName("SynthesizeNoteSpeech")>]
     let Run(
-            [<QueueTrigger("myqueue-items", Connection = "")>] myQueueItem: string, 
+            [<QueueTrigger("notes", Connection = "connStr")>] 
+            myQueueItem: string, 
             log: ILogger) =
     
         log.LogInformation(sprintf "C# Queue trigger function processed: %s" myQueueItem)

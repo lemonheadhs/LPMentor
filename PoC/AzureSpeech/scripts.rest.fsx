@@ -122,3 +122,32 @@ let saveAudioFile (fmt, fileName) =
 (AudioOutputFormats.Audio_16k_128k_mono_mp3, "rest.mp3")
 |> saveAudioFile
 
+
+
+// SSML type provider
+
+open System.Xml.Linq
+
+type SSML = XmlProvider<"""
+<speak version='1.0' xml:lang='en-US'>
+    <voice xml:lang='en-US' xml:gender='Female'
+    name='Microsoft Server Speech Text to Speech Voice (en-US, ZiraRUS)'>
+        Microsoft Speech Service Text-to-Speech API
+    </voice>
+</speak>""">
+
+let ssml = SSML.GetSample()
+
+SSML.Speak ssml.XElement
+
+let v = SSML.Voice ("lang", "gender", "name", "content")
+
+v.XElement |> SSML.Speak
+
+
+let xn s = XName.Get s
+
+XElement (xn "speak", XAttribute(xn "version", "1.0"), "123")
+
+ssml.XElement.LastAttribute.Name
+

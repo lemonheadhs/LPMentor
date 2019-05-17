@@ -1,0 +1,10 @@
+framework: netstandard2.0
+source https://api.nuget.org/v3/index.json
+storage: none
+
+nuget Fake.Core.Target
+nuget Fake.IO.FileSystem
+nuget Fake.IO.Zip
+nuget Fake.Azure.Kudu
+nuget Fake.DotNet.Cli
+nuget FSharp.Data

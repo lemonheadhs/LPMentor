@@ -1,3 +1,6 @@
+.fake/build.fsx/*
+!.fake/build.fsx/paket.dependencies
+!.fake/build.fsx/paket.lock
 .paket/load/
 .paket/paket.exe
 PoC/EvernoteApi/config.json
@@ -8,3 +11,6 @@ PoC/AzureSpeech/config.json
 
 src/WebhookFn1.0/
 src/WebhookFnFsx
+
+samples/PubProfile.json
+zipTemp/

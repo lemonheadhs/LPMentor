@@ -4,6 +4,7 @@ open System
 open HttpFs.Client
 open Hopac
 open FSharp.Data
+open System.Collections.Concurrent
 
 
 module Auth = begin
@@ -31,11 +32,18 @@ module Auth = begin
             }
         }
 
-    let mutable private token = getAuthToken () |> run
+    let private tkey = "token_store_key"
+    let private tokenCache = ConcurrentDictionary<string, Token>()
 
     let getRefreshedToken () =
-        if DateTime.Now > token.ExpiresAt then
-            token <- getAuthToken () |> run
+        let fetch = getAuthToken >> run
+        let token =
+            tokenCache.GetOrAdd(tkey, ignore >> fetch) |> function
+            | t when DateTime.Now > t.ExpiresAt ->
+                let t' = fetch()
+                tokenCache.[tkey] <- t'
+                t'
+            | t -> t
         token.Body
 
 end
@@ -126,7 +134,7 @@ let sendTTS fmt ssmlStr =
     job {
         let! resp = getResponse req
         return resp
-    } |> run
+    } |> Job.toAsync
 
 
 

@@ -77,7 +77,7 @@ let tryParseAudioNoteMetadata text =
         | false -> None
         | true ->
             let m = rgx.Match text
-            m.Groups.[groupName].Value |> Some
+            m.Groups.[groupName].Value.Trim() |> Some
     let lpmentorRgx = 
         Regex("<lpmentor>(?<metadata>.*?)</lpmentor>", RegexOptions.Singleline)
     let topicRgx = Regex("Topic: (?<topic>.*)")

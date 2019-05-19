@@ -69,3 +69,19 @@ let Run(
                     connectionString= connStr) |> Async.Ignore
     }
 
+
+// Got hit by SocketException:
+//   System.Net.Sockets.SocketException: An attempt was made to access a socket in a way forbidden by its access permissions.
+//
+// find some related material:
+//   AzureFunction connections limit:
+//     https://docs.microsoft.com/en-us/azure/azure-functions/manage-connections
+//   AzureStorage SDK connection exhaustion issue:
+//     https://github.com/Azure/azure-storage-net/issues/580#issuecomment-442226722
+//
+// So FSharp.AzureStorageTP did not cache/reuse any tableClient/etc, and the underlying WindowsAzure.Storage@v9.3.3 has the known issue of not pooling connections.
+// WindowsAzure.Storage@v9.4.1 was said to be able to mitigate the issue, but FSharp.AzureStorageTP is currently tied to storage sdk versions under v9.3.3 ...
+//
+
+
+

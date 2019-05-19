@@ -4,7 +4,7 @@ nuget Fake.IO.FileSystem
 nuget Fake.IO.Zip
 nuget Fake.Azure.Kudu
 nuget Fake.DotNet.Cli
-nuget FSharp.Data"
+nuget FSharp.Data //"
 #load "./.fake/build.fsx/intellisense_lazy.fsx"
 
 open System.IO

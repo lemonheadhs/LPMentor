@@ -1,0 +1,7 @@
+group Durable
+evernote-cloud-sdk-windows
+FSharp.Core
+FSharp.Data
+Http.fs
+TaskBuilder.fs
+Microsoft.AspNetCore.Http

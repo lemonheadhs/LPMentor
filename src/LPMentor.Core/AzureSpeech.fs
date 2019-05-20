@@ -1,4 +1,4 @@
-module LPMentor.TTSFn.AzureSpeech
+module LPMentor.Core.TTSFn.AzureSpeech
 
 open System
 open HttpFs.Client

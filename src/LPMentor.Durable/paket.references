@@ -1,0 +1,5 @@
+group Durable
+FSharp.Core
+Microsoft.NET.Sdk.Functions
+TaskBuilder.fs
+DurableFunctions.FSharp

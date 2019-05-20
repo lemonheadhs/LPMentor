@@ -10,7 +10,8 @@ open Microsoft.Extensions.Logging
 open FSharp.Azure.StorageTypeProvider.Table
 open LPMentor.Storage
 
-open Evernote
+open LPMentor.Core.WebhookFn
+open LPMentor.Core.Models
 
 module IngestNote =
 
@@ -22,11 +23,11 @@ module IngestNote =
     
         log.LogInformation("F# HTTP trigger function processed a request.")
 
-        match parseParams req with
+        match Evernote.parseParams req with
         | None -> task { return (BadRequestObjectResult ("Please pass a name on the query string or in the request body") :> IActionResult) }
         | Some webhookParams ->
 
-            match FetchNoteContent webhookParams.Guid_ with
+            match Evernote.FetchNoteContent webhookParams.Guid_ with
             | None -> task { return (BadRequestObjectResult ("Can not find valid audio note") :> IActionResult) }
             | Some (note1Content, metadata) ->
                 

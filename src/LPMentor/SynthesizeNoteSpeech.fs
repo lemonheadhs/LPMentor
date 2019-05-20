@@ -9,7 +9,8 @@ open FSharp.Azure.StorageTypeProvider.Table
 open FSharp.Control.Tasks.V2
 
 open LPMentor.Storage
-open LPMentor.TTSFn.AzureSpeech
+open LPMentor.Core.TTSFn.AzureSpeech
+open LPMentor.Core.Models
 
 
 let parseQueueMsg (queueMsg: string) =

@@ -1,4 +1,4 @@
-module LPMentor.WebhookFn.Evernote
+module LPMentor.Core.WebhookFn.Evernote
 
 open System
 open System.Text.RegularExpressions
@@ -32,6 +32,7 @@ type EvernoteNotification =
         | "business_update" -> Some BusinessUpdate
         | _ -> None
 
+[<CLIMutable>]
 type WebhookParam = {
     UserId: string
     NotebookGuid: string option

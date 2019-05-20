@@ -4,11 +4,6 @@
     <AzureFunctionsVersion>v2</AzureFunctionsVersion>
   </PropertyGroup>
   
-  <PropertyGroup>
-    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
-    <DotnetFscCompilerPath></DotnetFscCompilerPath>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="../LPMentor.Core/LPMentor.Core.fsproj">
       <Name>LPMentor.Core.fsproj</Name>
@@ -16,9 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="AzureStorage.fs" />
-    <Compile Include="SynthesizeNoteSpeech.fs" />
-    <Compile Include="IngestNote.fs" />
+    <Compile Include="Workflow.fs" />
+    <Compile Include="HttpStart.fs" />
   </ItemGroup>
 
   <ItemGroup>

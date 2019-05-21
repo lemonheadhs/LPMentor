@@ -55,32 +55,10 @@ end
 let workflow (webhookParam: WebhookParam) = orchestrator {
     let! optionNoteInfo = fetchNote <**> webhookParam.Guid_
     
-    // if false then
-    //     ()
-
-    //if Option.isSome optionNoteInfo then
-    let noteInfo = Option.get optionNoteInfo
-    let! pair = genAudio <**> noteInfo
-    pair |> ignore
-    //else
-        //()
-    // return [1];
-    return 0
+    if Option.isSome optionNoteInfo then
+        let noteInfo = Option.get optionNoteInfo
+        let! pair = genAudio <**> noteInfo
+        pair |> ignore
+        return ()
 }
 
-let test = orchestrator {
-    let! t = fetchNote <**> ""
-
-    if false then 
-        t |> ignore
-    else
-        t |> ignore
-
-    return 0
-}
-
-let test2 = task {
-    let! one = task { return 1 }
-
-    if false then ()
-}

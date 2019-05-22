@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Storage.fs" />
     <Compile Include="Workflow.fs" />
     <Compile Include="HttpStart.fs" />
   </ItemGroup>

@@ -3,3 +3,5 @@ FSharp.Core
 Microsoft.NET.Sdk.Functions
 TaskBuilder.fs
 DurableFunctions.FSharp
+Microsoft.Azure.Storage.Blob
+Microsoft.Azure.Cosmos.Table

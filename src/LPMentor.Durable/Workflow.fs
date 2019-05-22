@@ -1,13 +1,17 @@
-module LPMentor.Core.Workflow
+module LPMentor.Durable.Workflow
 
 open Microsoft.Azure.WebJobs
+open Microsoft.WindowsAzure.Storage.Blob
 open DurableFunctions.FSharp
 open FSharp.Control.Tasks.V2
 open System.Threading.Tasks
+open System.IO
 
 open LPMentor.Core.WebhookFn.Evernote
 open LPMentor.Core.TTSFn.AzureSpeech
 open LPMentor.Core.Models
+open Storage.Blob
+open Storage.Table
 
 let (<!+>) activityName f = Activity.define activityName f
 let (<!->) activityName f = Activity.defineTask activityName f
@@ -43,12 +47,22 @@ module Activities = begin
                             noteInfo.Topic 
                             noteInfo.Order 
                             noteInfo.Section
-                return (audioFileName, resp.body)
+                let container = getAudioContainer ()
+                do! container.GetBlockBlobReference(audioFileName)
+                             .UploadFromStreamAsync(resp.body)
+                return audioFileName
+            }
+
+        let storeAudioInfo_ (ni: NoteInfo, audioFileName: string) =
+            task {
+                let! result = AudioEntity.Save (ni, audioFileName)
+                return ()
             }
     end
 
     let fetchNote = "fetchNote" <!+> fetchNote_
     let genAudio = "genAudio" <!-> genAudio_
+    let storeAudioInfo = "storeAudioInfo" <!-> storeAudioInfo_
 end
 
 
@@ -57,8 +71,8 @@ let workflow (webhookParam: WebhookParam) = orchestrator {
     
     if Option.isSome optionNoteInfo then
         let noteInfo = Option.get optionNoteInfo
-        let! pair = genAudio <**> noteInfo
-        pair |> ignore
+        let! audioFileName = genAudio <**> noteInfo
+        do! storeAudioInfo <**> (noteInfo, audioFileName)
         return ()
 }
 

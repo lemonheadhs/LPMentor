@@ -18,9 +18,9 @@ open Fake.Azure
 System.Environment.CurrentDirectory = __SOURCE_DIRECTORY__
 printfn __SOURCE_DIRECTORY__
 
-let funcProject = "./src/LPMentor/LPMentor.fsproj"
+let funcProject = "./src/LPMentor.Durable/LPMentor_Durable.fsproj"
 let zipPackageDir = "./zipTemp" |> Path.GetFullPath
-let buildOutputDir = "./src/LPMentor/bin/Release" |> Path.GetFullPath
+let buildOutputDir = "./src/LPMentor.Durable/bin/Release" |> Path.GetFullPath
 
 Target.create "Clean"
     (fun _ -> Shell.cleanDirs [ buildOutputDir; zipPackageDir ])
@@ -30,7 +30,8 @@ Target.create "Build" (fun _ ->
         { defaults with Configuration = DotNet.BuildConfiguration.Release
                         Framework = Some "netcoreapp2.1"
                         OutputPath = Some buildOutputDir }
-    DotNet.publish setParams funcProject)
+    DotNet.publish setParams funcProject
+    Shell.copy buildOutputDir ["./src/LPMentor.Durable/host.json"])
     
 Target.create "Zip"
     (fun _ ->

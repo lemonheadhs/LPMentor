@@ -15,6 +15,7 @@ open LPMentor.Core.Models
 
 module IngestNote =
 
+    [<Obsolete>]
     [<FunctionName "IngestNote">]
     let Run(
             [<HttpTrigger(AuthorizationLevel.Anonymous, Route = "{*any}")>]

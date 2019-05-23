@@ -28,6 +28,7 @@ let tryGetNoteData (partition, rowKey) =
         return lpnoteEntity |> Option.map mapTo
     }
 
+[<Obsolete>]
 [<FunctionName("SynthesizeNoteSpeech")>]
 let Run(
         [<QueueTrigger("notes", Connection = "connStr")>] 

@@ -3,7 +3,6 @@ module LPMentor.Durable.Storage
 open System
 open Microsoft.Azure.Storage
 open System.Collections.Concurrent
-open System.Collections.Specialized.BitVector32
 
 module Blob = begin
     open Microsoft.Azure.Storage.Blob
@@ -26,7 +25,6 @@ module Table = begin
     open LPMentor.Core.Models
     open Microsoft.Azure.Cosmos.Table
     open System.Threading.Tasks
-    open FSharp.Control.Tasks.V2
 
     let private tableKey = "AudioInfoTableKey"
     let private tableCache = ConcurrentDictionary<string, CloudTable>()

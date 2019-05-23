@@ -53,16 +53,18 @@ module Activities = begin
                 return audioFileName
             }
 
-        let storeAudioInfo_ (ni: NoteInfo, audioFileName: string) =
+        let storeAudioInfo_ struct(ni: NoteInfo, audioFileName: string) =
+            // why ValueTuple? ActivityFunction does not accept multiple parameters
+            //  https://github.com/Azure/azure-functions-durable-extension/issues/152
             task {
                 let! result = AudioEntity.Save (ni, audioFileName)
                 return ()
             }
     end
 
-    let fetchNote = "fetchNote" <!+> fetchNote_
-    let genAudio = "genAudio" <!-> genAudio_
-    let storeAudioInfo = "storeAudioInfo" <!-> storeAudioInfo_
+    let fetchNote = "FetchNote" <!+> fetchNote_
+    let genAudio = "GenAudio" <!-> genAudio_
+    let storeAudioInfo = "StoreAudioInfo" <!-> storeAudioInfo_
 end
 
 
@@ -71,8 +73,21 @@ let workflow (webhookParam: WebhookParam) = orchestrator {
     
     if Option.isSome optionNoteInfo then
         let noteInfo = Option.get optionNoteInfo
-        let! audioFileName = genAudio <**> noteInfo
-        do! storeAudioInfo <**> (noteInfo, audioFileName)
+        let! audioFileName = 
+            genAudio <**> noteInfo
+        do! storeAudioInfo <**> struct(noteInfo, audioFileName)
         return ()
 }
 
+[<FunctionName("FetchNote")>]
+let FetchNote([<ActivityTrigger>] noteGuid) = fetchNote.run noteGuid
+
+[<FunctionName("GenAudio")>]
+let GenAudio([<ActivityTrigger>] noteInfo) = genAudio.run noteInfo
+
+[<FunctionName("StoreAudioInfo")>]
+let StoreAudioInfo([<ActivityTrigger>] p) = storeAudioInfo.run p
+
+[<FunctionName("NoteIngest")>]
+let Run([<OrchestrationTrigger>] context: DurableOrchestrationContext) =
+    Orchestrator.run (workflow, context)

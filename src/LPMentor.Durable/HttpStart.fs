@@ -2,6 +2,7 @@ namespace LPMentor.Durable
 
 open System
 open System.Net.Http
+open System.Threading.Tasks
 open Microsoft.Azure.WebJobs
 open Microsoft.Azure.WebJobs.Extensions.Http
 open Microsoft.AspNetCore.Http
@@ -23,13 +24,13 @@ module HttpStart =
         
         log.LogInformation("F# HTTP trigger function processed a request.")
 
-        task {
-            return
-                Evernote.parseParams req |> function
-                | None -> BadRequestObjectResult ("Please pass a name on the query string or in the request body") :> IActionResult
-                | Some webhookParams ->
-                    ("Success!" |> OkObjectResult) :> IActionResult
-        }
+        Evernote.parseParams req |> function
+        | None -> task { return (BadRequestObjectResult ("invalid webhook req") :> IActionResult) }
+        | Some webhookParams ->
+            task {
+                let! instanceId = starter.StartNewAsync ("NoteIngest", webhookParams)
+                return ("Success!" |> OkObjectResult) :> IActionResult
+            }
 
 
 

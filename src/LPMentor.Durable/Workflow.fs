@@ -22,19 +22,19 @@ module Activities = begin
     [<AutoOpen>]
     module ActivityFuncImpl = begin
         let fetchNote_ noteGuid =
-            try
-                FetchNoteContent noteGuid
-                |> Option.map (fun (content, metadata) ->
-                                    let noteInfo: NoteInfo = {
-                                        Text = content
-                                        Topic = metadata.Topic
-                                        Section = metadata.Section
-                                        Order = metadata.Order
-                                        Lang = metadata.Lang
-                                    }
-                                    noteInfo)                       
-            with
-            | _ -> None                        
+            FetchNoteContent noteGuid
+            |> Option.map (fun (content, metadata) ->
+                                let noteInfo: NoteInfo = {
+                                    Text = content
+                                    Topic = metadata.Topic
+                                    Section = metadata.Section
+                                    Order = metadata.Order
+                                    Lang = metadata.Lang
+                                }
+                                noteInfo)                       
+            // try
+            // with
+            // | _ -> None                        
 
         let genAudio_ (noteInfo: NoteInfo) =
             let ssml = SSML.genDefaultSSML noteInfo.Lang noteInfo.Text

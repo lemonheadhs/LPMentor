@@ -140,6 +140,11 @@ let FetchNoteContent noteGuid =
 
     if not <| ENSessionAdvanced.SharedSession.IsAuthenticated then
         ENSessionAdvanced.SharedSession.AuthenticateToEvernote()
+    if not <| ENSessionAdvanced.SharedSession.IsAuthenticated then
+        failwith "not authz"
+    // An issue found with the Evernote SDK:
+    //  the SDK internally uses Windows Registry to store authentication token;
+    //  but Azure Function is a sandbox environment which forbids any write operation to the Registry...
 
     let noteStore =
         ENSessionAdvanced.SharedSession.PrimaryNoteStore

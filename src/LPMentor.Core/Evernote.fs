@@ -129,11 +129,14 @@ let markupInnerText markupString =
     |> innerTextWithLineBreak
 
 let FetchNoteContent noteGuid =
-    // ENSessionAdvanced.SetSharedSessionConsumerKey ("lemonhead-hs", "324f03fcfb2577bd")
 
-    let devToken = Environment.GetEnvironmentVariable("devToken")
-    let noteStoreUrl = Environment.GetEnvironmentVariable("noteStoreUrl")
-    ENSessionAdvanced.SetSharedSessionDeveloperToken (devToken, noteStoreUrl)
+    // let devToken = Environment.GetEnvironmentVariable("devToken")
+    // let noteStoreUrl = Environment.GetEnvironmentVariable("noteStoreUrl")
+    // ENSessionAdvanced.SetSharedSessionDeveloperToken (devToken, noteStoreUrl)
+
+    let consumerKey = Environment.GetEnvironmentVariable "consumerKey"
+    let consumerSecret = Environment.GetEnvironmentVariable "consumerSecret"
+    ENSessionAdvanced.SetSharedSessionConsumerKey (consumerKey, consumerSecret, "app.yinxiang.com")
 
     if not <| ENSessionAdvanced.SharedSession.IsAuthenticated then
         ENSessionAdvanced.SharedSession.AuthenticateToEvernote()

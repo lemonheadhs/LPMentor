@@ -55,7 +55,7 @@ open EvernoteSDK.Advanced
 
 // ENSessionAdvanced.SetSharedSessionDeveloperToken devTokenAuthConfig
 
-ENSessionAdvanced.SetSharedSessionConsumerKey (config.ConsumerKey, config.ConsumerSecret)
+ENSessionAdvanced.SetSharedSessionConsumerKey (config.ConsumerKey, config.ConsumerSecret, "app.yinxiang.com")
 
 if not <| ENSessionAdvanced.SharedSession.IsAuthenticated then
   ENSessionAdvanced.SharedSession.AuthenticateToEvernote()
@@ -78,7 +78,7 @@ let searchNote (store: ENNoteStoreClient) spec searchTerms =
 
 let naiveSearch = searchNote primaryStore spec
 
-naiveSearch "world" // """created:month-3"""
+naiveSearch """notebook:"LPMentor" """ // """created:month-3"""
 
 *)
 // search syntax!!

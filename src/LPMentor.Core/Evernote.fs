@@ -162,7 +162,7 @@ let FetchNoteContent noteGuid =
             (fun metadata ->
                 note1Content, metadata)
 
-open LPMentor.Core.Evernote.Auth
+open LPMentor.Core.WebhookFn.EvernoteAuth
 open Evernote.EDAM.NoteStore
 
 let FetchNoteContentWith (noteStore: NoteStore.Client) authToken noteGuid =

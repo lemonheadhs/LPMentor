@@ -1,4 +1,4 @@
-module LPMentor.Core.Evernote.Auth
+module LPMentor.Core.WebhookFn.EvernoteAuth
 
 open System
 open System.Text.RegularExpressions
@@ -48,8 +48,7 @@ let getBootstrapInfo (userStoreUrl: string) =
 
 let authenticateToEvernote () = 
     let info = SessionHost |> userStoreUrl |> getBootstrapInfo
-    let profile = info.Profiles.[0]
-    let host = profile.Settings.ServiceHost
+    let host = info.Profiles.[0].Settings.ServiceHost
     let service =
         match host with
         | s when s = ENSessionBootstrapServerBaseURLStringCN ->

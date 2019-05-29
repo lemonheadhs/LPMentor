@@ -128,6 +128,7 @@ let markupInnerText markupString =
     |> fst
     |> innerTextWithLineBreak
 
+[<Obsolete>]
 let FetchNoteContent noteGuid =
 
     // let devToken = Environment.GetEnvironmentVariable("devToken")
@@ -160,3 +161,22 @@ let FetchNoteContent noteGuid =
         |> Option.map 
             (fun metadata ->
                 note1Content, metadata)
+
+open LPMentor.Core.Evernote.Auth
+open Evernote.EDAM.NoteStore
+
+let FetchNoteContentWith (noteStore: NoteStore.Client) authToken noteGuid =
+    noteGuid
+    |> getNoteTagNames noteStore authToken
+    |> Seq.exists ((=) "LPMentor") |> function
+    | false -> None
+    | true ->
+        let note1Content =
+            noteGuid 
+            |> getNoteContent noteStore authToken
+            |> markupInnerText
+        tryParseAudioNoteMetadata note1Content
+        |> Option.map 
+            (fun metadata ->
+                note1Content, metadata)
+

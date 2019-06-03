@@ -1,5 +1,6 @@
 module LPMentor.Durable.Workflow
 
+open System
 open Microsoft.Azure.WebJobs
 open Microsoft.WindowsAzure.Storage.Blob
 open DurableFunctions.FSharp
@@ -12,6 +13,7 @@ open LPMentor.Core.TTSFn.AzureSpeech
 open LPMentor.Core.Models
 open Storage.Blob
 open Storage.Table
+open System.Collections.Concurrent
 
 let (<!+>) activityName f = Activity.define activityName f
 let (<!->) activityName f = Activity.defineTask activityName f
@@ -21,6 +23,13 @@ let (<**>) activity p = Activity.call activity p
 module Activities = begin
     [<AutoOpen>]
     module ActivityFuncImpl = begin
+        let internal credCache = ConcurrentDictionary<string, CredEntity>()
+        let credExsists_ () =
+            credCache.TryGetValue("cred") |> function
+            | true, cred -> cred.ExpirationDate.AddHours(-3.) < DateTime.Now
+            | false, _ -> false
+            
+
         let fetchNote_ noteGuid =
             FetchNoteContent noteGuid
             |> Option.map (fun (content, metadata) ->
@@ -31,10 +40,7 @@ module Activities = begin
                                     Order = metadata.Order
                                     Lang = metadata.Lang
                                 }
-                                noteInfo)                       
-            // try
-            // with
-            // | _ -> None                        
+                                noteInfo)                
 
         let genAudio_ (noteInfo: NoteInfo) =
             let ssml = SSML.genDefaultSSML noteInfo.Lang noteInfo.Text
@@ -62,13 +68,23 @@ module Activities = begin
             }
     end
 
+    let fetchCred = "FetchCred" <!+> fetchCred_
     let fetchNote = "FetchNote" <!+> fetchNote_
     let genAudio = "GenAudio" <!-> genAudio_
     let storeAudioInfo = "StoreAudioInfo" <!-> storeAudioInfo_
 end
 
 
-let workflow (webhookParam: WebhookParam) = orchestrator {
+let workflow instanceId (webhookParam: WebhookParam) = orchestrator {
+    let! credOpt = fetchCred <**> ()
+    let mutable cred: CredEntity = CredEntity("", "")
+    
+    let! test =
+        if credOpt |> Option.isSome then
+            cred <- Option.get credOpt
+            Orchestrator.ret ()
+        else
+            Orchestrator.ret ()
     let! optionNoteInfo = fetchNote <**> webhookParam.Guid_
     
     if Option.isSome optionNoteInfo then
@@ -90,4 +106,4 @@ let StoreAudioInfo([<ActivityTrigger>] p) = storeAudioInfo.run p
 
 [<FunctionName("NoteIngest")>]
 let Run([<OrchestrationTrigger>] context: DurableOrchestrationContext) =
-    Orchestrator.run (workflow, context)
+    Orchestrator.run (workflow context.InstanceId, context)

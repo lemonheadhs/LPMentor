@@ -1,0 +1,4 @@
+group Durable
+FSharp.Data
+Microsoft.Azure.Storage.Queue
+Microsoft.Azure.Cosmos.Table

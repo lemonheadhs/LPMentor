@@ -11,6 +11,7 @@ open Evernote.EDAM.NoteStore
 open Thrift.Transport
 open Thrift.Protocol
 open EvernoteOAuthNet
+open EvernoteOAuthNet
 
 let ENSessionBootstrapServerBaseURLStringCN = "app.yinxiang.com"
 let ENSessionBootstrapServerBaseURLStringUS = "www.evernote.com"
@@ -46,11 +47,10 @@ let getBootstrapInfo (userStoreUrl: string) =
     let locale = CultureInfo.CurrentCulture.ToString()
     client.getBootstrapInfo(locale)
 
-let authenticateToEvernote () = 
-    let info = SessionHost |> userStoreUrl |> getBootstrapInfo
-    let host = info.Profiles.[0].Settings.ServiceHost
+let authenticateToEvernote () =
     let service =
-        match host with
+        let info = SessionHost |> userStoreUrl |> getBootstrapInfo
+        info.Profiles.[0].Settings.ServiceHost |> function
         | s when s = ENSessionBootstrapServerBaseURLStringCN ->
             EvernoteOAuth.HostService.Yinxiang
         | s when s = ENSessionBootstrapServerBaseURLStringUS ->
@@ -63,7 +63,9 @@ let authenticateToEvernote () =
     let oath = EvernoteOAuth(service, consumerKey, consumerSecret, false)
     let errResponse = oath.Authorize()
     errResponse.Length = 0 |> function
-    | false -> None
+    | false -> 
+        printfn "%s" errResponse
+        None
     | true ->
         let credentials = {
             Host = SessionHost
@@ -74,17 +76,3 @@ let authenticateToEvernote () =
             ExpirationDate = oath.Expires.ToDateTime()
         }
         Some credentials
-
-let noteStoreClient (noteStoreUrl:string) = 
-    noteStoreUrl
-    |> Uri
-    |> THttpClient
-    |> TBinaryProtocol
-    |> fun p -> p, p
-    |> NoteStore.Client
-
-let getNoteContent (noteStore: NoteStore.Client) authToken guid = 
-    noteStore.getNoteContent(authToken, guid)
-
-let getNoteTagNames (noteStore: NoteStore.Client) authToken guid = 
-    noteStore.getNoteTagNames(authToken, guid)

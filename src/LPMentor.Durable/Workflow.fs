@@ -5,6 +5,7 @@ open Microsoft.Azure.WebJobs
 open DurableFunctions.FSharp
 open FSharp.Control.Tasks.V2
 open System.Threading.Tasks
+open FSharp.Core
 
 open LPMentor.Core.WebhookFn.Evernote
 open LPMentor.Core.WebhookFn.EvernoteAuth
@@ -32,7 +33,7 @@ module Activities = begin
     module ActivityFuncImpl = begin
         let internal credCache = ConcurrentDictionary<string, CredEntity>()
         let ofValidCred (cred: CredEntity) = 
-            cred.ExpirationDate.AddHours(-3.) < DateTime.Now |> function
+            cred.ExpirationDate.AddHours(-3.) > DateTime.Now |> function
             | true -> Some cred
             | false -> None
         let getValidCachedCred () =
@@ -108,16 +109,29 @@ module Activities = begin
     let storeAudioInfo = "StoreAudioInfo" <!-> storeAudioInfo_
 end
 
+let isCredExpiredError (r: Result<NoteInfo, FetchNoteError>) =
+    match r with
+    | Error CredExpired -> true
+    | _ -> false
 
 let workflow instanceId (webhookParam: WebhookParam) = orchestrator {
     
     let! firstTry = fetchNote <**> webhookParam.Guid_
-    firstTry |> function
-    | Some noteInfo -> Orchestrator.ret (Some noteInfo)
-    | None ->
-        let maxWaitDuration = TimeSpan.FromDays 7.
-        (Orchestrator.waitForEvent maxWaitDuration "RenewAuth")
-    
+    let mutable rNoteInfo: Result<NoteInfo, FetchNoteError> = Error NoteNotFound
+    // if firstTry |> isCredExpiredError then
+    //     let maxWaitDuration = TimeSpan.FromDays 7.
+    //     let! s = Orchestrator.waitForEvent<string> maxWaitDuration "RenewAuth"
+    //     let! noteContent = fetchNote <**> webhookParam.Guid_
+    //     rNoteInfo <- noteContent
+    // else
+    //     rNoteInfo <- firstTry
+    // DurableFunction.FSharp now has this bug, you can not use 2 if-else block sequentially in one orchestrator workflow..
+
+    rNoteInfo <- firstTry
+
+    let optionNoteInfo = rNoteInfo |> function
+                         | Ok i -> Some i
+                         | _ -> None
     if Option.isSome optionNoteInfo then
         let noteInfo = Option.get optionNoteInfo
         let! audioFileName = 
@@ -125,6 +139,38 @@ let workflow instanceId (webhookParam: WebhookParam) = orchestrator {
         do! storeAudioInfo <**> struct(noteInfo, audioFileName)
         return ()
 }
+
+let testwf = orchestrator {
+    let! i = Orchestrator.ret 123
+    if true then
+        do! Orchestrator.ret ()
+        if true then
+            do! Orchestrator.ret ()
+        else
+            do! Orchestrator.ret ()
+    else
+        do! Orchestrator.ret ()
+    // let i2 = 12
+    // let! i3 = Orchestrator.ret 45
+
+    //  # the following if block will lead to error!
+    // if true then
+    //     do! Orchestrator.ret ()
+    // return ()
+}
+
+let testTaskWf = task {
+    let! i = Task.FromResult 12
+    if true then
+        do! Task.FromResult ()
+    else
+        do! Task.FromResult ()
+    
+    // task workflow does not have the same issue as orchestrator workflow
+    if true then
+        ()
+}
+
 
 [<FunctionName("FetchNote")>]
 let FetchNote([<ActivityTrigger>] noteGuid) = fetchNote.run noteGuid

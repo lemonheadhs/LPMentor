@@ -11,6 +11,7 @@ PoC/AzureSpeech/config.json
 
 src/WebhookFn1.0/
 src/WebhookFnFsx
+src/LPMentor.ConsoleTool/appsettings.json
 
 samples/PubProfile.json
 zipTemp/

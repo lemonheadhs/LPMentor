@@ -48,7 +48,7 @@ module Table = begin
         tableCache.GetOrAdd (audioTableKey, buildAudioTable)
 
     let getCredentialTable () =
-        tableCache.GetOrAdd (audioTableKey, buildAudioTable)
+        tableCache.GetOrAdd (credTableKey, buildCredTable)
 
     type AudioEntity (partition:string, rowId:string) =
         inherit TableEntity (partition, rowId)
@@ -78,6 +78,7 @@ module Table = begin
 
     type CredEntity (partition:string, rowId:string) =
         inherit TableEntity (partition, rowId)
+        new() = CredEntity("","")
         member val Host = "" with get, set
         member val EdamUserId = "" with get, set
         member val NoteStoreUrl = "" with get, set

@@ -164,6 +164,22 @@ let FetchNoteContent noteGuid =
 
 open LPMentor.Core.WebhookFn.EvernoteAuth
 open Evernote.EDAM.NoteStore
+open Thrift.Transport
+open Thrift.Protocol
+
+let noteStoreClient (noteStoreUrl:string) = 
+    noteStoreUrl
+    |> Uri
+    |> THttpClient
+    |> TBinaryProtocol
+    |> fun p -> p, p
+    |> NoteStore.Client
+
+let getNoteContent (noteStore: NoteStore.Client) authToken guid = 
+    noteStore.getNoteContent(authToken, guid)
+
+let getNoteTagNames (noteStore: NoteStore.Client) authToken guid = 
+    noteStore.getNoteTagNames(authToken, guid)
 
 let FetchNoteContentWith (noteStore: NoteStore.Client) authToken noteGuid =
     noteGuid

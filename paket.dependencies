@@ -13,7 +13,7 @@ framework: netcoreapp2.1
 group Durable
 source https://api.nuget.org/v3/index.json
 storage: none
-framework: netcoreapp2.1
+framework: netcoreapp2.1,net472
     nuget evernote-cloud-sdk-windows
     nuget FSharp.Core
     nuget FSharp.Data

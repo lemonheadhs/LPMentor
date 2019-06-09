@@ -14,17 +14,22 @@ let cwd = Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName
 
 [<Literal>]
 let configSample = """{
-    "azureStorageConnStr": "UseDevelopmentStorage=true"
+    "azureStorageConnStr": "UseDevelopmentStorage=true",
+    "consumerKey": "key",
+    "consumerSecret": "secret"
 }"""
 type Config = JsonProvider<configSample>
 let config = Path.Combine(cwd, "appsettings.json") |> Config.Load
 
+// set config val into environment variables, because evernote auth functions rely on that
+Environment.SetEnvironmentVariable ("consumerKey", config.ConsumerKey)
+Environment.SetEnvironmentVariable ("consumerSecret", config.ConsumerSecret)
 
 module Queue = begin
     let callbackQueue =
         CloudStorageAccount.Parse(config.AzureStorageConnStr)
                            .CreateCloudQueueClient()
-                           .GetQueueReference("LPAuthCallback")
+                           .GetQueueReference("lpauthcallback")
 end
 
 module Table = begin
@@ -63,6 +68,7 @@ module Table = begin
 end
 
 [<EntryPoint>]
+[<STAThread>]
 let main argv =
     printfn "Console tool for LPMentor renew authToken"
     authenticateToEvernote() |> function

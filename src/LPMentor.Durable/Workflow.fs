@@ -1,6 +1,8 @@
 module LPMentor.Durable.Workflow
 
 open System
+open System.IO
+open System.Text
 open Microsoft.Azure.WebJobs
 open DurableFunctions.FSharp
 open FSharp.Control.Tasks.V2
@@ -78,22 +80,55 @@ module Activities = begin
                 return contentResult
             }        
 
-        let genAudio_ (noteInfo: NoteInfo) =
-            let ssml = SSML.genDefaultSSML noteInfo.Lang noteInfo.Text
+        let splitText (s:string) = 
+            let size = 8000
+            let originLength = s.Length
+            let mutable pointer = 0
+            let sb = StringBuilder()
+            seq {
+                while originLength - pointer > 0 do
+                    let mutable span = Math.Min (originLength - pointer, size)
+                    sb.Append(s, pointer, span) |> ignore
+                    pointer <- pointer + span
+                    span <- 0
+                    while pointer + span < originLength && Char.IsLetterOrDigit(s, pointer + span) do            
+                        span <- span + 1
+                    if span > 0 then
+                        sb.Append(s, pointer, span) |> ignore
+                        pointer <- pointer + span
+                        span <- 0
+                    yield sb.ToString()
+                    sb.Length <- 0
+            }
+
+        let genAudioFile_ struct(fileName, lang, textContent) =
+            let ssml = SSML.genDefaultSSML lang textContent
             task {
                 let! resp = 
                     ssml
                     |> sendTTS AudioOutputFormats.Audio_16k_128k_mono_mp3
-                let audioFileName = 
-                    sprintf "%s/%i_%s.mp3" 
-                            noteInfo.Topic 
-                            noteInfo.Order 
-                            noteInfo.Section
                 let container = getAudioContainer ()
-                do! container.GetBlockBlobReference(audioFileName)
+                do! container.GetBlockBlobReference(fileName)
                              .UploadFromStreamAsync(resp.body)
-                return audioFileName
+                return fileName
             }
+        let genAudio_ (noteInfo: NoteInfo) =
+            let audioFileName = 
+                sprintf "%s/%i_%s.mp3" 
+                        noteInfo.Topic 
+                        noteInfo.Order 
+                        noteInfo.Section
+            genAudioFile_ struct(audioFileName, noteInfo.Lang, noteInfo.Text)
+        let mergeFiles (files:string seq) mergedFileName =
+            let container = getAudioContainer ()
+            let ms = MemoryStream()
+            files
+            |> Seq.iter (fun f ->
+                            container.GetBlockBlobReference(f)
+                                     .DownloadToStream (ms))
+            
+            container.GetBlockBlobReference(mergedFileName)
+                     .UploadFromStreamAsync(ms)
 
         let storeAudioInfo_ struct(ni: NoteInfo, audioFileName: string) =
             // why ValueTuple? ActivityFunction does not accept multiple parameters
@@ -105,6 +140,7 @@ module Activities = begin
     end
 
     let fetchNote = "FetchNote" <!-> fetchNote_
+    let genAudioFile = "GenAudioFile" <!-> genAudioFile_
     let genAudio = "GenAudio" <!-> genAudio_
     let storeAudioInfo = "StoreAudioInfo" <!-> storeAudioInfo_
 end
@@ -134,6 +170,14 @@ let workflow instanceId (webhookParam: WebhookParam) = orchestrator {
                          | _ -> None
     if Option.isSome optionNoteInfo then
         let noteInfo = Option.get optionNoteInfo
+        let segments = splitText noteInfo.Text |> Seq.toList
+        let segmentNames = segments
+        let! files =
+            segments
+            |> List.map2 (fun name content ->
+                            genAudioFile <**> struct(name, noteInfo.Lang, content))
+                         segmentNames
+            |> Activity.all
         let! audioFileName = 
             genAudio <**> noteInfo
         do! storeAudioInfo <**> struct(noteInfo, audioFileName)
@@ -174,6 +218,9 @@ let testTaskWf = task {
 
 [<FunctionName("FetchNote")>]
 let FetchNote([<ActivityTrigger>] noteGuid) = fetchNote.run noteGuid
+
+[<FunctionName("GenAudioFile")>]
+let GenAudioFile([<ActivityTrigger>] p) = genAudioFile.run p
 
 [<FunctionName("GenAudio")>]
 let GenAudio([<ActivityTrigger>] noteInfo) = genAudio.run noteInfo

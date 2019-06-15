@@ -112,23 +112,17 @@ module Activities = begin
                              .UploadFromStreamAsync(resp.body)
                 return fileName
             }
-        let genAudio_ (noteInfo: NoteInfo) =
-            let audioFileName = 
-                sprintf "%s/%i_%s.mp3" 
-                        noteInfo.Topic 
-                        noteInfo.Order 
-                        noteInfo.Section
-            genAudioFile_ struct(audioFileName, noteInfo.Lang, noteInfo.Text)
-        let mergeFiles (files:string seq) mergedFileName =
+
+        let mergeFiles_ struct(files:string list, mergedFileName:string) =
             let container = getAudioContainer ()
-            let ms = MemoryStream()
+            use ms = MemoryStream()
             files
-            |> Seq.iter (fun f ->
+            |> List.iter (fun f ->
                             container.GetBlockBlobReference(f)
                                      .DownloadToStream (ms))
-            
+            ms.Position <- 0L
             container.GetBlockBlobReference(mergedFileName)
-                     .UploadFromStreamAsync(ms)
+                     .UploadFromStream(ms)
 
         let storeAudioInfo_ struct(ni: NoteInfo, audioFileName: string) =
             // why ValueTuple? ActivityFunction does not accept multiple parameters
@@ -141,7 +135,7 @@ module Activities = begin
 
     let fetchNote = "FetchNote" <!-> fetchNote_
     let genAudioFile = "GenAudioFile" <!-> genAudioFile_
-    let genAudio = "GenAudio" <!-> genAudio_
+    let mergeFiles = "MergeFiles" <!+> mergeFiles_
     let storeAudioInfo = "StoreAudioInfo" <!-> storeAudioInfo_
 end
 
@@ -171,16 +165,25 @@ let workflow instanceId (webhookParam: WebhookParam) = orchestrator {
     if Option.isSome optionNoteInfo then
         let noteInfo = Option.get optionNoteInfo
         let segments = splitText noteInfo.Text |> Seq.toList
-        let segmentNames = segments
+        let segmentNames = 
+            [1..segments.Length]
+            |> List.map (sprintf "%s/portions/%i_%s_%i.mp3"
+                                noteInfo.Topic
+                                noteInfo.Order
+                                noteInfo.Section)
+        let mergedFileName = 
+            sprintf "%s/%i_%s.mp3" 
+                    noteInfo.Topic 
+                    noteInfo.Order 
+                    noteInfo.Section
         let! files =
             segments
             |> List.map2 (fun name content ->
                             genAudioFile <**> struct(name, noteInfo.Lang, content))
                          segmentNames
             |> Activity.all
-        let! audioFileName = 
-            genAudio <**> noteInfo
-        do! storeAudioInfo <**> struct(noteInfo, audioFileName)
+        do! mergeFiles <**> struct(files, mergedFileName)
+        do! storeAudioInfo <**> struct(noteInfo, mergedFileName)
         return ()
 }
 
@@ -222,8 +225,8 @@ let FetchNote([<ActivityTrigger>] noteGuid) = fetchNote.run noteGuid
 [<FunctionName("GenAudioFile")>]
 let GenAudioFile([<ActivityTrigger>] p) = genAudioFile.run p
 
-[<FunctionName("GenAudio")>]
-let GenAudio([<ActivityTrigger>] noteInfo) = genAudio.run noteInfo
+[<FunctionName("MergeFiles")>]
+let MergeFiles([<ActivityTrigger>] p) = mergeFiles.run p
 
 [<FunctionName("StoreAudioInfo")>]
 let StoreAudioInfo([<ActivityTrigger>] p) = storeAudioInfo.run p

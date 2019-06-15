@@ -61,7 +61,7 @@ module Table = begin
     with
         static member ModifyWith (ni: NoteInfo, audioBlobName: string) (e: AudioEntity) =
             e.BlobName <- audioBlobName
-            e.Text <- ni.Text
+            e.Text <- ni.Text.Substring(0, Math.Min(ni.Text.Length, 1000))
             e.Topic <- ni.Topic
             e.Section <- ni.Section
             e.Order <- ni.Order

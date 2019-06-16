@@ -19,134 +19,19 @@ open System.Collections.Concurrent
 open Evernote.EDAM.NoteStore
 open FSharp.Control.Tasks
 open System.Diagnostics
+open Activities
 
 let (<!+>) activityName f = Activity.define activityName f
 let (<!->) activityName f = Activity.defineTask activityName f
 let (<**>) activity p = Activity.call activity p
 
-let inline (>>=) (m: Task<'a>) (f: 'a -> Task<'b>) =
-    task {
-        let! a = m
-        return! (f a)
-    }
 
-[<AutoOpen>]
-module Activities = begin
-    [<AutoOpen>]
-    module ActivityFuncImpl = begin
-        let internal credCache = ConcurrentDictionary<string, CredEntity>()
-        let ofValidCred (cred: CredEntity) = 
-            cred.ExpirationDate.AddHours(-3.) > DateTime.Now |> function
-            | true -> Some cred
-            | false -> None
-        let getValidCachedCred () =
-            credCache.TryGetValue("cred") |> function
-            | true, cred -> ofValidCred cred
-            | _ -> None
-        let internal noteStoreCache = ConcurrentDictionary<string, NoteStore.Client>()
-        let getCachedNoteStore (cred: CredEntity) =
-            noteStoreCache.GetOrAdd(cred.NoteStoreUrl, noteStoreClient)
+let fetchNote = "FetchNote" <!-> fetchNote_
+let genAudioFile = "GenAudioFile" <!-> genAudioFile_
+let mergeFiles = "MergeFiles" <!-> mergeFiles_
+let storeAudioInfo = "StoreAudioInfo" <!-> storeAudioInfo_
 
-        type FetchNoteError = | CredExpired | NoteNotFound
-        
-        let fetchNote_ noteGuid =
-            task {
-                let! credOpt =
-                    getValidCachedCred() |> function
-                    | Some cred -> Task.FromResult (Some cred)
-                    | None -> 
-                        CredEntity.TryGet() 
-                        >>= (   Option.bind ofValidCred
-                             >> Option.map (fun validCred ->
-                                                credCache.AddOrUpdate("cred", validCred, (fun s c -> validCred)))
-                             >> Task.FromResult)
-                let contentResult =
-                    credOpt
-                    |> Result.ofOption CredExpired
-                    |> Result.bind (
-                        fun cred ->
-                            let noteStore = getCachedNoteStore cred
-                            FetchNoteContentWith noteStore cred.AuthenticationToken noteGuid
-                            |> Result.ofOption NoteNotFound)
-                    |> Result.map (
-                        fun (content, metadata) ->
-                            let noteInfo: NoteInfo = {
-                                Text = content
-                                Topic = metadata.Topic
-                                Section = metadata.Section
-                                Order = metadata.Order
-                                Lang = metadata.Lang
-                            }
-                            noteInfo)  
-                return contentResult
-            }        
-
-        let splitText (s:string) = 
-            let size = 8000
-            let originLength = s.Length
-            let mutable pointer = 0
-            let sb = StringBuilder()
-            seq {
-                while originLength - pointer > 0 do
-                    let mutable span = Math.Min (originLength - pointer, size)
-                    sb.Append(s, pointer, span) |> ignore
-                    pointer <- pointer + span
-                    span <- 0
-                    while pointer + span < originLength && Char.IsLetterOrDigit(s, pointer + span) do            
-                        span <- span + 1
-                    if span > 0 then
-                        sb.Append(s, pointer, span) |> ignore
-                        pointer <- pointer + span
-                        span <- 0
-                    yield sb.ToString()
-                    sb.Length <- 0
-            }
-
-        let genAudioFile_ struct(fileName:string, lang, textContent) =
-            let ssml = SSML.genDefaultSSML lang textContent
-            task {
-                let! resp = 
-                    ssml
-                    |> sendTTS AudioOutputFormats.Audio_16k_128k_mono_mp3
-                let container = getAudioContainer ()
-                do! container.GetBlockBlobReference(fileName)
-                             .UploadFromStreamAsync(resp.body)
-                return fileName
-            }
-
-        let mergeFiles_ struct(files:string list, mergedFileName:string) =
-            let container = getAudioContainer ()
-            task {
-                let ms = MemoryStream()
-                for file in files do
-                    do! (container.GetBlockBlobReference(file)
-                                 .DownloadToStreamAsync (ms))
-                ms.Position <- 0L
-                do! container.GetBlockBlobReference(mergedFileName)
-                            .UploadFromStreamAsync(ms)
-                ms.Dispose()
-            }
-
-        let storeAudioInfo_ struct(ni: NoteInfo, audioFileName: string) =
-            // why ValueTuple? ActivityFunction does not accept multiple parameters
-            //  https://github.com/Azure/azure-functions-durable-extension/issues/152
-            task {
-                let! result = AudioEntity.Save (ni, audioFileName)
-                return ()
-            }
-    end
-
-    let fetchNote = "FetchNote" <!-> fetchNote_
-    let genAudioFile = "GenAudioFile" <!-> genAudioFile_
-    let mergeFiles = "MergeFiles" <!-> mergeFiles_
-    let storeAudioInfo = "StoreAudioInfo" <!-> storeAudioInfo_
-end
-
-let isCredExpiredError (r: Result<NoteInfo, FetchNoteError>) =
-    match r with
-    | Error CredExpired -> true
-    | _ -> false
-
+[<Obsolete>]
 let workflow instanceId (webhookParam: WebhookParam) = orchestrator {
     
     let! firstTry = fetchNote <**> webhookParam.Guid_
@@ -246,18 +131,18 @@ let testwf2 instanceId (webhookParam: WebhookParam) = orchestrator {
 }
 
 
-[<FunctionName("FetchNote")>]
-let FetchNote([<ActivityTrigger>] noteGuid) = fetchNote.run noteGuid
+// [<FunctionName("FetchNote")>]
+// let FetchNote([<ActivityTrigger>] noteGuid) = fetchNote.run noteGuid
 
-[<FunctionName("GenAudioFile")>]
-let GenAudioFile([<ActivityTrigger>] p) = genAudioFile.run p
+// [<FunctionName("GenAudioFile")>]
+// let GenAudioFile([<ActivityTrigger>] p) = genAudioFile.run p
 
-[<FunctionName("MergeFiles")>]
-let MergeFiles([<ActivityTrigger>] p) = mergeFiles.run p
+// [<FunctionName("MergeFiles")>]
+// let MergeFiles([<ActivityTrigger>] p) = mergeFiles.run p
 
-[<FunctionName("StoreAudioInfo")>]
-let StoreAudioInfo([<ActivityTrigger>] p) = storeAudioInfo.run p
+// [<FunctionName("StoreAudioInfo")>]
+// let StoreAudioInfo([<ActivityTrigger>] p) = storeAudioInfo.run p
 
-[<FunctionName("NoteIngest")>]
-let Run([<OrchestrationTrigger>] context: DurableOrchestrationContext) =
-    Orchestrator.run (workflow context.InstanceId, context)
+// [<FunctionName("NoteIngest")>]
+// let Run([<OrchestrationTrigger>] context: DurableOrchestrationContext) =
+//     Orchestrator.run (workflow context.InstanceId, context)

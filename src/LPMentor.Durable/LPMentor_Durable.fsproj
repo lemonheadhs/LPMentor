@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <Compile Include="Storage.fs" />
+    <Compile Include="Activities.fs" />
+    <Compile Include="PlainOldWay.fs" />
     <Compile Include="Workflow.fs" />
     <Compile Include="HttpStart.fs" />
   </ItemGroup>

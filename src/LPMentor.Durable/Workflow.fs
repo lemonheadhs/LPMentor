@@ -18,6 +18,7 @@ open Storage.Table
 open System.Collections.Concurrent
 open Evernote.EDAM.NoteStore
 open FSharp.Control.Tasks
+open System.Diagnostics
 
 let (<!+>) activityName f = Activity.define activityName f
 let (<!->) activityName f = Activity.defineTask activityName f
@@ -101,7 +102,7 @@ module Activities = begin
                     sb.Length <- 0
             }
 
-        let genAudioFile_ struct(fileName, lang, textContent) =
+        let genAudioFile_ struct(fileName:string, lang, textContent) =
             let ssml = SSML.genDefaultSSML lang textContent
             task {
                 let! resp = 
@@ -115,14 +116,16 @@ module Activities = begin
 
         let mergeFiles_ struct(files:string list, mergedFileName:string) =
             let container = getAudioContainer ()
-            use ms = MemoryStream()
-            files
-            |> List.iter (fun f ->
-                            container.GetBlockBlobReference(f)
-                                     .DownloadToStream (ms))
-            ms.Position <- 0L
-            container.GetBlockBlobReference(mergedFileName)
-                     .UploadFromStream(ms)
+            task {
+                let ms = MemoryStream()
+                for file in files do
+                    do! (container.GetBlockBlobReference(file)
+                                 .DownloadToStreamAsync (ms))
+                ms.Position <- 0L
+                do! container.GetBlockBlobReference(mergedFileName)
+                            .UploadFromStreamAsync(ms)
+                ms.Dispose()
+            }
 
         let storeAudioInfo_ struct(ni: NoteInfo, audioFileName: string) =
             // why ValueTuple? ActivityFunction does not accept multiple parameters
@@ -135,7 +138,7 @@ module Activities = begin
 
     let fetchNote = "FetchNote" <!-> fetchNote_
     let genAudioFile = "GenAudioFile" <!-> genAudioFile_
-    let mergeFiles = "MergeFiles" <!+> mergeFiles_
+    let mergeFiles = "MergeFiles" <!-> mergeFiles_
     let storeAudioInfo = "StoreAudioInfo" <!-> storeAudioInfo_
 end
 
@@ -178,9 +181,8 @@ let workflow instanceId (webhookParam: WebhookParam) = orchestrator {
                     noteInfo.Section
         let! files =
             segments
-            |> List.map2 (fun name content ->
-                            genAudioFile <**> struct(name, noteInfo.Lang, content))
-                         segmentNames
+            |> List.map2 (fun name content -> struct(name, noteInfo.Lang, content)) segmentNames
+            |> List.map (Activity.call genAudioFile)
             |> Activity.all
         do! mergeFiles <**> struct(files, mergedFileName)
         do! storeAudioInfo <**> struct(noteInfo, mergedFileName)
@@ -216,6 +218,31 @@ let testTaskWf = task {
     // task workflow does not have the same issue as orchestrator workflow
     if true then
         ()
+}
+
+let hardWork = 
+    fun item -> task {
+      do! Task.Delay 1000
+      return sprintf "Worked hard on %s!" item
+    }
+    |> Activity.defineTask "HardWork"
+
+[<FunctionName("HardWork")>]
+let HardWork([<ActivityTrigger>] name) = hardWork.run name
+
+
+let testwf2 instanceId (webhookParam: WebhookParam) = orchestrator {
+    do! Orchestrator.delay (TimeSpan.FromSeconds 5.)
+    let! files =
+        ["1"; "2"]
+        |> List.map (Activity.call hardWork)
+        |> Activity.all
+    
+    do! Orchestrator.delay (TimeSpan.FromSeconds 5.)
+    // Function 'NoteIngest (Orchestrator)' failed with an error. 
+    // Reason: System.InvalidOperationException: Multithreaded execution was detected
+    // https://microsoft.com/en-us/azure/azure-functions/durable-functions-checkpointing-and-replay#orchestrator-code-constraints.
+    return ()
 }
 
 

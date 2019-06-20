@@ -1,0 +1,6 @@
+group WebServer
+    FSharp.Core
+    Giraffe
+    Microsoft.AspNetCore
+    Microsoft.AspNetCore.StaticFiles
+    Fable.Remoting.Giraffe

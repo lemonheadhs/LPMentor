@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Core Launch (console)",
+            "name": "Launch LPMenter.ConsoleTool",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "buildConsoleTool",
             "program": "${workspaceFolder}/src/LPMentor.ConsoleTool/bin/Debug/net472/LPMentor.ConsoleTool.exe",
             "args": [],
             "cwd": "${workspaceFolder}",
@@ -20,6 +20,52 @@
             "type": "coreclr",
             "request": "attach",
             "processId": "${command:pickProcess}"
+        },
+        {
+            "name": "Debug Server",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "Build Server",
+            "program": "${workspaceFolder}/src/LPMentor.Web/Server/bin/Debug/netcoreapp2.2/Server.dll",
+            "args": [],
+            "logging": {
+                "moduleLoad": false
+            },
+            "stopAtEntry": false,
+            "console": "internalConsole",
+        },
+        {
+            "name": "Debug Client",
+            "type": "chrome",
+            "request": "launch",
+            "preLaunchTask": "Watch Client",
+            "url": "http://localhost:8080",
+            "webRoot": "${workspaceFolder}/src/LPMentor.Web/Client",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack:///*": "${workspaceFolder}/*",
+            }
+        },
+        {
+            "name": "Watch SAFE App",
+            "type": "chrome",
+            "request": "launch",
+            "preLaunchTask": "Watch Client and Server",
+            "url": "http://localhost:8080",
+            "env": {
+                "vsCodeSession":"true"
+            },
+            "webRoot": "${workspaceFolder}/src/LPMentor.Web/Client",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack:///*": "${workspaceFolder}/*",
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug SAFE App",
+            "configurations": [ "Debug Server", "Debug Client" ],
         }
     ]
 }

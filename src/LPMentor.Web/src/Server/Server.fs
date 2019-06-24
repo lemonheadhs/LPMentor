@@ -6,6 +6,7 @@ open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Configuration
 
 open FSharp.Control.Tasks.V2
 open Giraffe
@@ -32,6 +33,15 @@ let webApp =
     |> Remoting.buildHttpHandler
 
 
+let configureAppConfig (ctx: WebHostBuilderContext) (config: IConfigurationBuilder) =
+    let environment = ctx.HostingEnvironment.EnvironmentName
+    config
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional = true)
+        .AddJsonFile(sprintf "appsettings.%s.json" environment, optional = true)
+        .AddEnvironmentVariables()
+    |> ignore
+
 let configureApp (app : IApplicationBuilder) =
     app.UseDefaultFiles()
        .UseStaticFiles()
@@ -40,12 +50,23 @@ let configureApp (app : IApplicationBuilder) =
 let configureServices (services : IServiceCollection) =
     services.AddGiraffe() |> ignore
 
-WebHost
-    .CreateDefaultBuilder()
-    .UseWebRoot(publicPath)
-    .UseContentRoot(publicPath)
-    .Configure(Action<IApplicationBuilder> configureApp)
-    .ConfigureServices(configureServices)
-    .UseUrls("http://0.0.0.0:" + port.ToString() + "/")
-    .Build()
-    .Run()
+#if DEBUG
+let contentRoot = publicPath
+let webRoot = publicPath
+#else
+let contentRoot = Directory.GetCurrentDirectory()
+let webRoot = Path.Combine(contentRoot, "Public")
+#endif
+
+[<EntryPoint>]
+let main _ =
+    WebHost
+        .CreateDefaultBuilder()
+        .UseWebRoot(webRoot)
+        .UseContentRoot(contentRoot)
+        .ConfigureAppConfiguration(configureAppConfig)
+        .Configure(Action<IApplicationBuilder> configureApp)
+        .ConfigureServices(configureServices)
+        .Build()
+        .Run()
+    0

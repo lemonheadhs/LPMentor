@@ -4,3 +4,4 @@ group WebServer
     Microsoft.AspNetCore
     Microsoft.AspNetCore.StaticFiles
     Fable.Remoting.Giraffe
+    Microsoft.Azure.Cosmos.Table

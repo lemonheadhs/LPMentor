@@ -70,7 +70,7 @@ let webProjFolder = Path.getFullName "./src/LPMentor.Web"
 let serverPath = Path.getFullName "./src/LPMentor.Web/src/Server"
 let clientPath = Path.getFullName "./src/LPMentor.Web/src/Client"
 let clientDeployPath = Path.combine clientPath "deploy"
-let deployDir = Path.getFullName "./deploy"
+let deployDir = Path.combine serverPath "deploy"
 
 let release = ReleaseNotes.load (Path.combine webProjFolder "RELEASE_NOTES.md")
 
@@ -113,7 +113,8 @@ let openBrowser url =
 
 Target.create "CleanWeb" (fun _ ->
     [ deployDir
-      clientDeployPath ]
+      clientDeployPath
+      zipPackageDir ]
     |> Shell.cleanDirs
 )
 
@@ -126,13 +127,22 @@ Target.create "InstallClient" (fun _ ->
 )
 
 Target.create "BuildWeb" (fun _ ->
-    runDotNet "build" serverPath
+    runDotNet (sprintf "publish -o %s -c Release" deployDir) serverPath
     Shell.regexReplaceInFileWithEncoding
         "let app = \".+\""
        ("let app = \"" + release.NugetVersion + "\"")
         System.Text.Encoding.UTF8
         (Path.combine clientPath "Version.fs")
     runTool yarnTool "webpack-cli -p" webProjFolder
+)
+
+Target.create "ZipWeb" (fun _ ->
+    let webRoot = Path.combine deployDir "Public"
+    Shell.mkdir webRoot
+    Shell.copyRecursive clientDeployPath webRoot true |> ignore
+    !!Path.Combine(deployDir, "**/*")
+    |> Zip.createZip deployDir (Path.Combine(zipPackageDir, "publishWeb.zip"))
+            "" Zip.DefaultZipLevel false
 )
 
 Target.create "Run" (fun _ ->
@@ -171,6 +181,7 @@ open Fake.Core.TargetOperators
 "CleanWeb"
     ==> "InstallClient"
     ==> "BuildWeb"
+    ==> "ZipWeb"
 
 
 "CleanWeb"

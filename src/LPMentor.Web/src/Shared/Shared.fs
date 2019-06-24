@@ -12,3 +12,9 @@ module Route =
 type ICounterApi =
     { initialCounter : unit -> Async<Counter> }
 
+type Section = { Name: string; Url: string }
+type Lesson = { Topic: string; Sections: Section array }
+
+type ILessonSearchApi = 
+    { init : unit -> Async<Lesson array> 
+      searchTopic : string -> Async<Lesson array> }

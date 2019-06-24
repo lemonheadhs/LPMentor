@@ -67,8 +67,8 @@ open Fake.DotNet
 open Fake.IO
 
 let webProjFolder = Path.getFullName "./src/LPMentor.Web"
-let serverPath = Path.getFullName "./src/LPMentor.Web/Server"
-let clientPath = Path.getFullName "./src/LPMentor.Web/Client"
+let serverPath = Path.getFullName "./src/LPMentor.Web/src/Server"
+let clientPath = Path.getFullName "./src/LPMentor.Web/src/Client"
 let clientDeployPath = Path.combine clientPath "deploy"
 let deployDir = Path.getFullName "./deploy"
 

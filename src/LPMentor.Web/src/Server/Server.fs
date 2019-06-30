@@ -11,6 +11,7 @@ open Microsoft.Extensions.Configuration
 open FSharp.Control.Tasks.V2
 open Giraffe
 open Shared
+open LPMentor.Web.Type
 
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
@@ -47,8 +48,10 @@ let configureApp (app : IApplicationBuilder) =
        .UseStaticFiles()
        .UseGiraffe webApp
 
-let configureServices (services : IServiceCollection) =
+let configureServices (hostCtx: WebHostBuilderContext) (services : IServiceCollection) =
+    let config = hostCtx.Configuration
     services.AddGiraffe() |> ignore
+    services.Configure<AppSetting>(config) |> ignore
 
 #if DEBUG
 let contentRoot = publicPath

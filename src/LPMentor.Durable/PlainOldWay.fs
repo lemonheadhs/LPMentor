@@ -47,6 +47,7 @@ let run ([<OrchestrationTrigger>] context: DurableOrchestrationContext) = task {
             |> Task.WhenAll
         do! context.CallActivityAsync("mergeFiles_", struct(List.ofArray(files), mergedFileName))
         do! context.CallActivityAsync("storeAudioInfo_", struct(noteInfo, mergedFileName))
+        do! context.CallActivityAsync("updateCatalog_", noteInfo.Topic)
     return ()
 }
 
@@ -61,3 +62,6 @@ let MergeFiles([<ActivityTrigger>] p) = mergeFiles_ p
 
 [<FunctionName("storeAudioInfo_")>]
 let StoreAudioInfo([<ActivityTrigger>] p) = storeAudioInfo_ p
+
+[<FunctionName("updateCatalog_")>]
+let UpdateCatalog([<ActivityTrigger>] p) = updateCatalog_ p

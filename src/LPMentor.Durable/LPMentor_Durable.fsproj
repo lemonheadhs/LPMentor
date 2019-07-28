@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="../LPMentor.Web/src/server/TableQuery.fs" />
     <Compile Include="Storage.fs" />
     <Compile Include="Activities.fs" />
     <Compile Include="PlainOldWay.fs" />

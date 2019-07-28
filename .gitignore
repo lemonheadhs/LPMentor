@@ -3,6 +3,7 @@
 !.fake/build.fsx/paket.lock
 .paket/load/
 .paket/paket.exe
+.ionide/
 PoC/EvernoteApi/config.json
 PoC/AzureSpeech/config.json
 

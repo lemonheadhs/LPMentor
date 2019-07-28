@@ -3,6 +3,7 @@ module LPMentor.Durable.Storage
 open System
 open Microsoft.Azure.Storage
 open System.Collections.Concurrent
+open Newtonsoft.Json
 
 module Blob = begin
     open Microsoft.Azure.Storage.Blob
@@ -22,6 +23,8 @@ module Blob = begin
 end
 
 module Table = begin
+    open LPMentor.Core
+    open LPMentor.Core.TableQuery
     open LPMentor.Core.Models
     open Microsoft.Azure.Cosmos.Table
     open LPMentor.Core.WebhookFn.EvernoteAuth
@@ -30,19 +33,18 @@ module Table = begin
 
     let private audioTableKey = "AudioInfoTableKey"
     let private credTableKey = "CredTableKey"
+    let private cataTableKey = "CataTableKey"
     let private tableCache = ConcurrentDictionary<string, CloudTable>()
 
-    let private buildAudioTable (ignored:string) = 
+    let private buildTable s (ignored:string) =
         let connStr = Environment.GetEnvironmentVariable("connStr")
         CloudStorageAccount.Parse(connStr)
                            .CreateCloudTableClient()
-                           .GetTableReference("LPAudio")
+                           .GetTableReference(s)
 
-    let private buildCredTable (ignored:string) = 
-        let connStr = Environment.GetEnvironmentVariable("connStr")
-        CloudStorageAccount.Parse(connStr)
-                           .CreateCloudTableClient()
-                           .GetTableReference("LPCredential")
+    let private buildAudioTable   = buildTable "LPAudio"
+    let private buildCredTable    = buildTable "LPCredential"
+    let private buildCatalogTable = buildTable "LPCatalog"
 
     let getAudioInfoTable () =
         tableCache.GetOrAdd (audioTableKey, buildAudioTable)
@@ -50,8 +52,12 @@ module Table = begin
     let getCredentialTable () =
         tableCache.GetOrAdd (credTableKey, buildCredTable)
 
+    let getCatalogTable () =
+        tableCache.GetOrAdd (cataTableKey, buildCatalogTable)
+
     type AudioEntity (partition:string, rowId:string) =
         inherit TableEntity (partition, rowId)
+        new() = AudioEntity("","")
         member val Text = "" with get, set
         member val Topic = "" with get, set
         member val Section = "" with get, set
@@ -75,6 +81,14 @@ module Table = begin
             e
             |> TableOperation.InsertOrReplace
             |> table.ExecuteAsync
+        static member SearchByTopic (topic:string) =
+            let table = getAudioInfoTable ()
+            TableQuery<AudioEntity>()
+                .Where(
+                        ("PartitionKey" == "v1")
+                      + ("RowKey" ^>= topic)
+                      + ("RowKey" ^< (topic+EndingChar)))
+            |> table.ExecuteQuery
 
     type CredEntity (partition:string, rowId:string) =
         inherit TableEntity (partition, rowId)
@@ -113,4 +127,33 @@ module Table = begin
                     if result.Result |> isNull then None
                     else result.Result :?> CredEntity |> Some
             }
+
+    [<CLIMutable>]
+    type CatalogPiece = {
+        section:string
+        url:string
+        order:int
+    }
+    
+    type CatalogEntity (partition:string, rowId:string) =
+        inherit TableEntity (partition, rowId)
+        new() = CatalogEntity("","")
+        member val Summary = "" with get, set
+    with
+        static member Recollect (topic:string) =
+            AudioEntity.SearchByTopic topic
+            |> Seq.map (fun x -> 
+                            { section = x.Section
+                              order = x.Order
+                              url = x.BlobName })
+            |> Seq.toArray
+            |> fun ls ->
+                let c = CatalogEntity ("v1", topic)
+                c.Summary <- JsonConvert.SerializeObject ls
+                c
+        static member Save (e: CatalogEntity) =
+            let table = getCatalogTable ()
+            e 
+            |> TableOperation.InsertOrReplace
+            |> table.ExecuteAsync
 end

@@ -104,7 +104,7 @@ let genAudioFile_ struct(fileName:string, lang, textContent) =
 let mergeFiles_ struct(files:string list, mergedFileName:string) =
     let container = getAudioContainer ()
     task {
-        let ms = MemoryStream()
+        let ms = new MemoryStream()
         for file in files do
             do! (container.GetBlockBlobReference(file)
                          .DownloadToStreamAsync (ms))
@@ -119,6 +119,14 @@ let storeAudioInfo_ struct(ni: NoteInfo, audioFileName: string) =
     //  https://github.com/Azure/azure-functions-durable-extension/issues/152
     task {
         let! result = AudioEntity.Save (ni, audioFileName)
+        return ()
+    }
+
+let updateCatalog_ (topic: string) =
+    task {
+        let! result =
+            CatalogEntity.Recollect topic
+            |> CatalogEntity.Save
         return ()
     }
 

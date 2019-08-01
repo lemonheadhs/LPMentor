@@ -26,8 +26,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "Build Server",
-            "program": "${workspaceFolder}/src/LPMentor.Web/Server/bin/Debug/netcoreapp2.2/Server.dll",
+            "program": "${workspaceFolder}/src/LPMentor.Web/src/Server/bin/Debug/netcoreapp2.2/Server.dll",
             "args": [],
+            "cwd": "${workspaceFolder}/src/LPMentor.Web/src/Server",
             "logging": {
                 "moduleLoad": false
             },

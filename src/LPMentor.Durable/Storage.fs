@@ -83,6 +83,7 @@ module Table = begin
             |> table.ExecuteAsync
         static member SearchByTopic (topic:string) =
             let table = getAudioInfoTable ()
+            let topic = topic + "_"
             TableQuery<AudioEntity>()
                 .Where(
                         ("PartitionKey" == "v1")

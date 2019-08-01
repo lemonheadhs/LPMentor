@@ -12,9 +12,13 @@ module Route =
 type ICounterApi =
     { initialCounter : unit -> Async<Counter> }
 
-type Section = { Name: string; Url: string }
+[<CLIMutable>]
+type Section = { Section: string; Url: string; Order: int }
+[<CLIMutable>]
 type Lesson = { Topic: string; Sections: Section array }
+[<CLIMutable>]
+type TableToken = { Token: string }
 
 type ILessonSearchApi = 
-    { init : unit -> Async<Lesson array> 
-      searchTopic : string -> Async<Lesson array> }
+    { init : TableToken -> Async<Lesson array * TableToken> 
+      searchTopic : string -> TableToken -> Async<Lesson array * TableToken> }

@@ -7,18 +7,18 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Configuration
-
 open FSharp.Control.Tasks.V2
-open Giraffe
-open Shared
-open LPMentor.Web.Type
-
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
+open Giraffe
+
+open Shared
+open LPMentor.Web.Type
+open LPMentor.Web.Lesson
 
 let tryGetEnv = System.Environment.GetEnvironmentVariable >> function null | "" -> None | x -> Some x
 
-let publicPath = Path.GetFullPath "../Client/public"
+let publicPath = Path.Combine(Environment.CurrentDirectory, "../Client/public") |> Path.GetFullPath
 let port =
     "SERVER_PORT"
     |> tryGetEnv |> Option.map uint16 |> Option.defaultValue 8085us
@@ -30,7 +30,8 @@ let counterApi = {
 let webApp =
     Remoting.createApi()
     |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.fromValue counterApi
+    |> Remoting.fromReader lessonApi
+    |> Remoting.withDiagnosticsLogger (printfn "%s")
     |> Remoting.buildHttpHandler
 
 

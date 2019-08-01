@@ -3,19 +3,23 @@ module LPMentor.Web.Lesson
 open System
 open Microsoft.Azure.Cosmos.Table
 open FSharp.Control.Tasks.V2
+open Fable.Remoting.Giraffe
+open Newtonsoft.Json
+open Microsoft.Extensions.Options
 
 open LPMentor.Web.Type
 open LPMentor.Core
 open LPMentor.Core.TableQuery
+open Shared
 
 
 let internal search connStr prevToken conditions =
     let table =
         CloudStorageAccount.Parse(connStr)
                            .CreateCloudTableClient()
-                           .GetTableReference("LPAudio")
+                           .GetTableReference("LPCatalog")
     let rangeQuery =
-        table.CreateQuery<AudioEntity>()
+        TableQuery<CatalogEntity>()
              .Where(
                    ("PartitionKey" == "v1") + conditions)
 
@@ -25,10 +29,29 @@ let internal search connStr prevToken conditions =
         return segment.Results, segment.ContinuationToken
     }
 
-let searchLessons connStr (s: string, prevToken) =
-      ("Topic" ^>= s ) 
-    + ("Topic" ^< (s+EndingChar))
+let searchLessons connStr (s: string) (prevToken:TableContinuationToken) =
+      ("RowKey" ^>= s ) 
+    + ("RowKey" ^< (s+EndingChar))
     |> search connStr prevToken
 
 let browseAmongAllLessons connStr prevToken =
     search connStr prevToken FilterCondition.Empty
+
+let lessonApi = reader {
+    let! appSettingsOption = resolve<IOptionsSnapshot<AppSetting>> ()
+    let appSettings = appSettingsOption.Value
+    let connStr = appSettings.AzureStorageConnStr
+    let fromTableToken (t:TableToken) =
+        if String.IsNullOrEmpty t.Token then null
+        else JsonConvert.DeserializeObject<TableContinuationToken> (t.Token)
+    let toTableToken (ct:TableContinuationToken) =
+        { Token = JsonConvert.SerializeObject ct }
+    let adapt (x: Async<ResizeArray<CatalogEntity>*TableContinuationToken>) = async {
+        let! ls, ct = x
+        let lessons = ls.ToArray() |> Array.map (fun l -> { Topic = l.RowKey; Sections = JsonConvert.DeserializeObject<Section []>(l.Summary) })
+        return lessons, (toTableToken ct)
+    }
+    return {
+        init = fromTableToken >> browseAmongAllLessons connStr >> Async.AwaitTask >> adapt
+        searchTopic = fun topic -> fromTableToken >> searchLessons connStr topic >> Async.AwaitTask >> adapt }
+}

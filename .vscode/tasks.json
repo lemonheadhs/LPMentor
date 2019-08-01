@@ -21,7 +21,7 @@
             "command": "dotnet",
             "args": [ "build" ],
             "type": "shell",
-            "options": { "cwd": "${workspaceFolder}/src/LPMentor.Web/Server" },
+            "options": { "cwd": "${workspaceFolder}/src/LPMentor.Web/src/Server" },
             "group": "build",
             "problemMatcher": [ "$msCompile" ]
         },

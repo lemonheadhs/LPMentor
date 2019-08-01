@@ -31,7 +31,9 @@ let webApp =
     Remoting.createApi()
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.fromReader lessonApi
+#if DEBUG
     |> Remoting.withDiagnosticsLogger (printfn "%s")
+#endif
     |> Remoting.buildHttpHandler
 
 

@@ -18,6 +18,7 @@ type Section = { Section: string; Url: string; Order: int }
 type Lesson = { Topic: string; Sections: Section array }
 [<CLIMutable>]
 type TableToken = { Token: string }
+    with static member empty = { Token = "null" }
 
 type ILessonSearchApi = 
     { init : TableToken -> Async<Lesson array * TableToken> 

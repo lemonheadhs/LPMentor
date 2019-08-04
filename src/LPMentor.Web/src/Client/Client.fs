@@ -10,6 +10,7 @@ open Fable.FontAwesome
 
 open Shared
 open Lecture
+open Search
 
 // The model holds data that you want to keep track of while the application is running
 // in this case, we are keeping track of a counter
@@ -141,23 +142,6 @@ let appNav =
                               hr [ Class "navbar-divider" ]
                               Navbar.Item.div []
                                 [ str "Logout" ] ] ] ] ] ] ]
-
-let searchBox =
-    let inputControl =
-        Control.div [ Control.HasIconLeft; Control.HasIconRight ]
-            [ Input.input [ Input.Option.Size IsLarge
-                            Input.Option.Type Input.IInputType.Search ]
-              Icon.icon [ Icon.Option.IsLeft; Icon.Option.Size IsMedium ]
-                [ Fa.i [ Fa.Solid.Search ] [ ] ]
-              Icon.icon [ Icon.Option.IsRight; Icon.Option.Size IsMedium ]
-                [ Fa.i [ Fa.Brand.Empire ] [ ] ] ] 
-    section [ Class "hero is-info" ]
-        [ Hero.body []
-            [ Container.container []
-                [ Card.card []
-                    [ Card.content []
-                        [ Content.content []
-                            [ inputControl ] ] ] ] ] ]
 
 let quickFilters =
     let filter (c:IColor) title =

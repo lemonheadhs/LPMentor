@@ -7,4 +7,5 @@ group WebClient
     Fable.Remoting.Client
     Fulma
     Fable.FontAwesome.Free
+    FSharp.Control.AsyncRx
 

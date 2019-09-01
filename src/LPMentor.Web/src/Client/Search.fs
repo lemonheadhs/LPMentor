@@ -7,6 +7,7 @@ open Fable.React
 open Fable.React.Props
 open Elmish
 open Fable.Remoting.Client
+open Fable.Core.JsInterop
 
 open Shared
 open Microsoft.FSharp.Control
@@ -46,7 +47,8 @@ let view (model: Model) (dispatch: Msg -> unit) =
     // { new IObservable<string> with
     //     member _.Subscribe() }
     let test (ke: KeyboardEvent) =
-        Browser.Dom.console.log ke
+        Fable.Core.JsInterop.createObj
+        Browser.Dom.console.log (toJson ke)
         
     let inputControl =
         Control.div [ Control.HasIconLeft; Control.HasIconRight ]

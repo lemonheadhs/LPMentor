@@ -25,7 +25,7 @@ type Model = {
 // The Msg type defines what events/actions can occur while the application is running
 // the state of the application changes *only* in reaction to these events
 type Msg =
-| Lesson of Lecture.Msg * TableToken option
+| Lesson of Lecture.Msg * TableToken
 | Search of Search.Msg
 
 
@@ -37,16 +37,18 @@ let init () : Model * Cmd<Msg> =
     { Lessons = lessonsModel
       Search = searchModel
       NextToken = TableToken.empty },
-    Cmd.map (fun l -> Msg.Lesson (l, None)) cmds1 @ Cmd.map Search cmds2
+    Cmd.map (fun l -> Msg.Lesson (l, TableToken.empty)) cmds1 @ Cmd.map Search cmds2
 
 // The update function computes the next state of the application based on the current state and the incoming events/messages
 // It can also run side-effects (encoded as commands) like calling the server via Http.
 // these commands in turn, can dispatch messages to which the update function will react.
 let update (msg : Msg) (currModel : Model) : Model * Cmd<Msg> =
     match msg with
-    | Lesson (lessonMsg, tokenOption) ->
+    | Lesson (lessonMsg, token) ->
         let m, c = Lecture.update lessonMsg currModel.Lessons
-        { currModel with Lessons = m }, 
+        { currModel with 
+            Lessons = m
+            NextToken = token }, 
         Cmd.map Msg.Lesson c
 
     | Search searchMsg ->
@@ -60,13 +62,13 @@ let update (msg : Msg) (currModel : Model) : Model * Cmd<Msg> =
                 Cmd.OfAsync.perform reqFn TableToken.empty
                     (fun (ls, t) ->
                         ( ls |> List.ofArray |> Lecture.Full,
-                          Some t) |> Msg.Lesson)
+                          t) |> Msg.Lesson)
             | RequestNext ->
                 let reqNextFn = chooseReqFn currModel.Search.SearchTerm
                 Cmd.OfAsync.perform reqNextFn currModel.NextToken
                     (fun (ls, t) ->
                         ( ls |> List.ofArray |> Lecture.Append,
-                          Some t) |> Msg.Lesson)
+                          t) |> Msg.Lesson)
 
         let m, c = Search.update searchMsg currModel.Search
         { currModel with Search = m },
@@ -171,7 +173,15 @@ let temp =
 
 let view (model : Model) (dispatch : Msg -> unit) =
     div []
-        [ temp ]
+        [ appNav
+          Search.view model.Search (Msg.Search >> dispatch)
+          quickFilters
+          Lecture.view model.Lessons (fun ls -> Msg.Lesson (ls, model.NextToken) |> dispatch)
+          Columns.columns [ Columns.Option.IsMobile; Columns.Option.IsCentered ]
+            [ Column.column [ Column.Option.Width (Screen.All, Column.ISize.IsHalf)
+                              Column.Option.Width (Screen.All, Column.ISize.IsNarrow) ]
+                [ ] ]
+          appFooter ]
 
 #if DEBUG
 open Elmish.Debug

@@ -53,5 +53,5 @@ let lessonApi = reader {
     }
     return {
         init = fromTableToken >> browseAmongAllLessons connStr >> Async.AwaitTask >> adapt
-        searchTopic = fun topic -> fromTableToken >> searchLessons connStr topic >> Async.AwaitTask >> adapt }
+        searchTopic = fun topic ttoken -> fromTableToken ttoken |> searchLessons connStr topic |> Async.AwaitTask |> adapt }
 }

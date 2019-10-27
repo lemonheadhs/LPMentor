@@ -15,6 +15,7 @@ open Giraffe
 open Shared
 open LPMentor.Web.Type
 open LPMentor.Web.Lesson
+open Microsoft.AspNetCore.Http
 
 let tryGetEnv = System.Environment.GetEnvironmentVariable >> function null | "" -> None | x -> Some x
 
@@ -27,9 +28,19 @@ let counterApi = {
     initialCounter = fun () -> async { return { Value = 42 } }
 }
 
+let errorHandler (ex: Exception) (routeInfo: RouteInfo<HttpContext>) = 
+    // do some logging
+    printfn "Error at %s on method %s" routeInfo.path routeInfo.methodName
+    // decide whether or not you want to propagate the error to the client
+    match ex with
+    | :? System.Exception as x ->
+        // ignore error
+        Ignore
+
 let webApp =
     Remoting.createApi()
     |> Remoting.withRouteBuilder Route.builder
+    |> Remoting.withErrorHandler errorHandler
     |> Remoting.fromReader lessonApi
 #if DEBUG
     |> Remoting.withDiagnosticsLogger (printfn "%s")

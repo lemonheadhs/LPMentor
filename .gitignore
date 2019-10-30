@@ -15,4 +15,5 @@ src/WebhookFnFsx
 src/LPMentor.ConsoleTool/appsettings.json
 
 samples/PubProfile.json
+samples/PubProfile.web.json
 zipTemp/

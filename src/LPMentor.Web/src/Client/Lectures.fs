@@ -57,7 +57,7 @@ let LectureCard' (c: IColor) topic (sections: Section seq) =
     let boardItem (section: Section) =
         div [ Class "board-item" ]
             [ div [ Class "board-item-content" ]
-                [ a [ Href section.Url ]
+                [ a [ Href (sprintf "/audios/%s" section.Url) ]
                     [ str section.Section ] ] ]
     Column.column [ Column.Option.Width (Screen.All, Column.ISize.IsNarrow) ]
         [ Message.message [ Message.Option.Color c ]

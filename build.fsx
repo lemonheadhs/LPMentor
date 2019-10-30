@@ -43,9 +43,8 @@ type PubProfile = JsonProvider<"./samples/PubProfileSample.json", ResolutionFold
 let pubSettings =
     PubProfile.Load(Path.combine __SOURCE_DIRECTORY__ "samples/PubProfile.json")
 
-Target.create "Deploy" (fun _ ->
-    let zipPath = Path.Combine(zipPackageDir, "publish.zip")
-    pubSettings
+let performDeploy (settings:PubProfile.Root[]) zipPath =
+    settings
     |> Seq.iter (fun p ->
            let deployParams : Kudu.ZipDeployParams =
                { PackageLocation = zipPath
@@ -57,7 +56,11 @@ Target.create "Deploy" (fun _ ->
                  UserName = p.GitUsername }
            Kudu.zipDeploy deployParams
            printfn "App Service %s deployed" p.Name)
-    printfn "All App Services are updated!")
+    printfn "All App Services are updated!"
+
+Target.create "Deploy" (fun _ ->
+    Path.Combine(zipPackageDir, "publish.zip")
+    |> performDeploy pubSettings)
 
 
 open System
@@ -145,6 +148,12 @@ Target.create "ZipWeb" (fun _ ->
             "" Zip.DefaultZipLevel false
 )
 
+let pubWebSettings = PubProfile.Load(Path.combine __SOURCE_DIRECTORY__ "samples/PubProfile.web.json")
+
+Target.create "DeployWeb" (fun _ ->
+    Path.Combine(zipPackageDir, "publishWeb.zip")
+    |> performDeploy pubWebSettings)
+
 Target.create "Run" (fun _ ->
     let server = async {
         runDotNet "watch run" serverPath
@@ -182,6 +191,7 @@ open Fake.Core.TargetOperators
     ==> "InstallClient"
     ==> "BuildWeb"
     ==> "ZipWeb"
+    ==> "DeployWeb"
 
 
 "CleanWeb"

@@ -8,6 +8,8 @@
     <None Include="index.html" />
     <None Include="paket.references" />
     <Compile Include="..\Shared\Shared.fs" />
+    <Compile Include="PlayerInternal.fs" />
+    <Compile Include="Player.fs" />
     <Compile Include="Version.fs" />
     <Compile Include="Lectures.fs" />
     <Compile Include="Search.fs" />

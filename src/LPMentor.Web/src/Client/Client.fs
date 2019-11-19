@@ -11,6 +11,8 @@ open Fable.FontAwesome
 open Shared
 open Lecture
 open Search
+open PlayerInternal
+open Player
 
 // The model holds data that you want to keep track of while the application is running
 // in this case, we are keeping track of a counter
@@ -19,6 +21,7 @@ open Search
 type Model = { 
     Lessons: Lecture.Model
     Search: Search.Model
+    Player: Player.Model
     NextToken: TableToken
 }
 
@@ -27,6 +30,7 @@ type Model = {
 type Msg =
 | Lesson of Lecture.Msg * TableToken
 | Search of Search.Msg
+| Player of Player.Msg
 
 
 // defines the initial state and initial command (= side-effect) of the application
@@ -34,8 +38,10 @@ let init () : Model * Cmd<Msg> =
     
     let lessonsModel, cmds1 = Lecture.init ()
     let searchModel, cmds2 = Search.init ()
+    let playerModel, _ = Player.init ()
     { Lessons = lessonsModel
       Search = searchModel
+      Player = playerModel
       NextToken = TableToken.empty },
     Cmd.map (fun l -> Msg.Lesson (l, TableToken.empty)) cmds1 @ Cmd.map Search cmds2
 
@@ -45,11 +51,17 @@ let init () : Model * Cmd<Msg> =
 let update (msg : Msg) (currModel : Model) : Model * Cmd<Msg> =
     match msg with
     | Lesson (lessonMsg, token) ->
+        let c1 =
+            match lessonMsg with
+            | SelectLesson (topic, section, url) ->
+                Player.Msg.ChangeRecord (url, sprintf "%s - %s" topic section) 
+                |> Msg.Player |> Cmd.ofMsg
+            | _ -> Cmd.Empty
         let m, c = Lecture.update lessonMsg currModel.Lessons
         { currModel with 
             Lessons = m
             NextToken = token }, 
-        Cmd.map Msg.Lesson c
+        (Cmd.map Msg.Lesson c) @ c1
 
     | Search searchMsg ->
         let cmd =
@@ -73,6 +85,11 @@ let update (msg : Msg) (currModel : Model) : Model * Cmd<Msg> =
         let m, c = Search.update searchMsg currModel.Search
         { currModel with Search = m },
         Cmd.map Msg.Search c @ cmd
+
+    | Player playerMsg ->
+        let m, c = Player.update playerMsg currModel.Player
+        { currModel with Player = m },
+        Cmd.map Msg.Player c
 
 let appNav =
     Navbar.navbar [ Navbar.HasShadow ]
@@ -110,12 +127,19 @@ let quickFilters =
     Box.box' [ CustomClass "cta" ]
         [ Columns.columns [ Columns.Option.IsCentered; Columns.Option.IsMobile ]
             [ Field.div [ Field.Option.IsGrouped; Field.Option.IsGroupedMultiline ]
-                [ filter IsLink "Link"
-                  filter IsSuccess "Success"
-                  filter IsBlack "Black"
-                  filter IsWarning "Warning"
-                  filter IsDanger "Danger"
-                  filter IsInfo "Info" ] ] ]
+                [ // filter IsLink "Link"
+                  // filter IsSuccess "Success"
+                  // filter IsBlack "Black"
+                  // filter IsWarning "Warning"
+                  // filter IsDanger "Danger"
+                  // filter IsInfo "Info" 
+                  ] ] ]
+
+let audioPlayer =
+    Container.container [] [
+        LPMemtorAudioPlayer [ AudioComponentProp.StreamUrl "http://localhost/2_GrowthOfFunctions.mp3" ]
+    ]
+
 
 let appFooter =
     footer [ ]
@@ -138,44 +162,13 @@ let appFooter =
                                   Fa.i [ Fa.Brand.Github ]
                                     [ ] ] ] ] ] ] ] ]
 
-let temp =
-    body [ ]
-        [ appNav
-          searchBox
-          quickFilters
-          section [ Class "container" ]
-            [ Level.item []
-                [ Columns.columns [ Columns.Option.IsMultiline; Columns.Option.IsCentered ; Columns.Option.CustomClass "cards-container";
-                                    Columns.Option.Props [Id "sectioncontainer" ]]
-                    [ LectureCard IsBlack "Season 1" 
-                        ["The Fort"; "Fist Like a bullet"; "White Stork Spreads Wings"; "Two Tigers Subdue Dragons"; "Snake Creeps Down"; "Hand of Five Poisons"]
-                      LectureCard IsPrimary "Season 2"
-                        ["Tiger Pushes Mountain"; "Force of Eagle's Claw"; "Red Sun, Silver Moon"; "Palm of the Iron Fox"; "Monkey Leaps Through Mist" 
-                         "Leopard Stalks in Snow"; "Black Heart, White Mountain"; "Sting of the Scorpion's Tail"; "Nightingale Sings No More"
-                         "Wolf's Breath, Dragon Fire"] 
-                      LectureCard IsLink "Season 3"
-                        ["Enter the Phoenix"; "Moon Rises, Raven Seeks"; "Leopard Snares Rabbit"; "Blind Cannibal Assassins"; "Carry Tiger to Mountain";
-                         "Black Wind Howls"; "Dragonfly's Last Dance"; "Leopard Catches Cloud"; "Chamber of the Scorpion"; "Raven's Feather, Phoenix Blood";
-                         "The Boar And The Butterfly"; "Cobra Fang, Panther Claw"; "Black Lothus, White Rose"; "Curse of the Red Rain"; 
-                         "Requiem for the Fallen"; "Seven Strike as One"]
-                      LectureCard IsInfo "Info"
-                        ["Bronchy"; "Aorta"; "Alveolae"; "TALISMAN"]
-                      LectureCard IsSuccess "Success"
-                        ["signature"; "weasel"; "solana"; "hydro"]
-                      LectureCard IsWarning "Warning"
-                        ["Ganimede"; "Europa"; "Tycho"; "Io"] ] ] ]
-          Columns.columns [ Columns.Option.IsMobile; Columns.Option.IsCentered ]
-            [ Column.column [ Column.Option.Width (Screen.All, Column.ISize.IsHalf)
-                              Column.Option.Width (Screen.All, Column.ISize.IsNarrow) ]
-                [ ] ]
-          appFooter
-        ]
-
 let view (model : Model) (dispatch : Msg -> unit) =
     div []
         [ appNav
           Search.view model.Search (Msg.Search >> dispatch)
-          quickFilters
+          // quickFilters
+          // audioPlayer
+          Player.view model.Player (Msg.Player >> dispatch)
           Lecture.view model.Lessons (fun ls -> Msg.Lesson (ls, model.NextToken) |> dispatch)
           Columns.columns [ Columns.Option.IsMobile; Columns.Option.IsCentered ]
             [ Column.column [ Column.Option.Width (Screen.All, Column.ISize.IsHalf)

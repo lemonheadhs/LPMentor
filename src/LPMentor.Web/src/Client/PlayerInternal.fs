@@ -12,15 +12,16 @@ type SoundCloudAudio =
     [<Emit("$0.play({ streamUrl: $1 })")>]
     abstract playURI: string -> unit
     abstract next: unit -> unit
-    abstract on: string * (unit -> unit) -> unit
-    
+    abstract on: string -> (unit -> unit) -> unit
+    abstract preload: string * string -> unit
+
     abstract playing: bool with get
     abstract duration: int with get
     abstract audio: HTMLMediaElement with get
     
 type SoundCloudAudioStatic =
-    [<Emit("new $0()")>]
-    abstract Create: unit -> SoundCloudAudio
+    [<Emit("new $0($1, $2)")>]
+    abstract Create: (string * string) -> SoundCloudAudio
 
 [<ImportDefault("soundcloud-audio")>]
 let SoundCloudAudio : SoundCloudAudioStatic = jsNative
@@ -36,23 +37,23 @@ let PlayButton (props: PlayButtonProp seq) (elems: ReactElement seq) =
     ofImport "PlayButton" "react-soundplayer/components" (keyValueList CaseRules.LowerFirst props) elems
 
 type TimerProp =
-| CurrentTime of int
+| CurrentTime of float
 | ClassName of string
 | Style of obj
 | SoundCloudAudio of SoundCloudAudio
-| Duration of int
+| Duration of float
 
 let Timer (props: TimerProp seq) (elems: ReactElement seq) =
     ofImport "Timer" "react-soundplayer/components" (keyValueList CaseRules.LowerFirst props) elems
 
 type ProgressProp =
-| OnSeekTrack of (unit -> unit)
+| OnSeekTrack of (float -> obj -> unit)
 | ClassName of string
 | InnerClassName of string
 | Style of obj
 | InnerStyle of obj
-| CurrentTime of int
-| Duration of int
+| CurrentTime of float
+| Duration of float
 | Value of int
 | SoundCloudAudio of SoundCloudAudio
 
@@ -60,13 +61,13 @@ let Progress (props: ProgressProp seq) (elems: ReactElement seq) =
     ofImport "Progress" "react-soundplayer/components" (keyValueList CaseRules.LowerFirst props) elems
 
 type VolumeProp =
-| OnVolumeChange of (int * obj -> unit)
-| OnToggleMute of (bool * obj -> unit)
+| OnVolumeChange of (float -> obj -> unit)
+| OnToggleMute of (bool -> obj -> unit)
 | IsMuted of bool
 | ClassName of string
 | ButtonClassName of string
 | RangeClassName of string
-| Volume of int
+| Volume of float
 | SoundCloudAudio of SoundCloudAudio
 
 let VolumeControl (props: VolumeProp seq) (elems: ReactElement seq) =
@@ -74,7 +75,7 @@ let VolumeControl (props: VolumeProp seq) (elems: ReactElement seq) =
 
 [<StringEnum>]
 type PreloadType =
-| None
+| [<CompiledName("none")>] Nil
 | Metadata
 | Auto
 
@@ -83,7 +84,7 @@ type AudioComponentProp =
 | PreloadType of PreloadType
 | SoundCloudAudio of SoundCloudAudio
 | OnReady of (unit -> unit)
-| OnStartTrack of (SoundCloudAudio * bool -> unit)
+| OnStartTrack of (SoundCloudAudio -> bool -> unit)
 | OnPauseTrack of (SoundCloudAudio -> unit)
 | OnStopTrack of (SoundCloudAudio -> unit)
 | OnCanPlayTrack of (SoundCloudAudio -> unit)

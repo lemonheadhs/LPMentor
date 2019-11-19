@@ -54,7 +54,7 @@ let update (msg : Msg) (currModel : Model) : Model * Cmd<Msg> =
         let c1 =
             match lessonMsg with
             | SelectLesson (topic, section, url) ->
-                Player.Msg.ChangeRecord (sprintf "/audios%s" url, sprintf "%s - %s" topic section) 
+                Player.Msg.ChangeRecord (sprintf "/audios/%s" url, sprintf "%s - %s" topic section) 
                 |> Msg.Player |> Cmd.ofMsg
             | _ -> Cmd.Empty
         let m, c = Lecture.update lessonMsg currModel.Lessons

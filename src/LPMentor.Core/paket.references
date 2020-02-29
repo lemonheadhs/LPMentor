@@ -5,3 +5,5 @@ FSharp.Data
 Http.fs
 TaskBuilder.fs
 Microsoft.AspNetCore.Http
+Microsoft.Azure.Storage.Blob
+Microsoft.Azure.Cosmos.Table

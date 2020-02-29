@@ -1,9 +1,11 @@
-module LPMentor.Durable.Storage
+module LPMentor.Core.Storage
 
 open System
 open Microsoft.Azure.Storage
 open System.Collections.Concurrent
 open Newtonsoft.Json
+open LPMentor.Core.AzTables
+open LPMentor.Core.AzTables.TableQuery
 
 module Blob = begin
     open Microsoft.Azure.Storage.Blob
@@ -23,13 +25,10 @@ module Blob = begin
 end
 
 module Table = begin
-    open LPMentor.Core
-    open LPMentor.Core.TableQuery
     open LPMentor.Core.Models
     open Microsoft.Azure.Cosmos.Table
     open LPMentor.Core.WebhookFn.EvernoteAuth
     open FSharp.Control.Tasks.V2
-    open System.Threading.Tasks
 
     let private audioTableKey = "AudioInfoTableKey"
     let private credTableKey = "CredTableKey"

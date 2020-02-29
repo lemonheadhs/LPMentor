@@ -4,9 +4,8 @@ open System
 open System.Threading.Tasks
 open Microsoft.Azure.WebJobs
 open FSharp.Control.Tasks.V2
-open Microsoft.Azure.WebJobs
 
-open LPMentor.Durable.Activities
+open LPMentor.Core.Activities
 open LPMentor.Core.WebhookFn.Evernote
 open LPMentor.Core.Models
 

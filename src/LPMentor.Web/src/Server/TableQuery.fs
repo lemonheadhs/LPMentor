@@ -1,4 +1,4 @@
-module LPMentor.Core
+module LPMentor.Core.AzTables
 
 open System
 open Microsoft.Azure.Cosmos.Table

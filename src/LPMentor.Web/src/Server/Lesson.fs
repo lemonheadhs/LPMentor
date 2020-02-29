@@ -3,13 +3,12 @@ module LPMentor.Web.Lesson
 open System
 open Microsoft.Azure.Cosmos.Table
 open FSharp.Control.Tasks.V2
-open Fable.Remoting.Giraffe
 open Newtonsoft.Json
 open Microsoft.Extensions.Options
 
 open LPMentor.Web.Type
-open LPMentor.Core
-open LPMentor.Core.TableQuery
+open LPMentor.Core.AzTables
+open LPMentor.Core.AzTables.TableQuery
 open Shared
 
 

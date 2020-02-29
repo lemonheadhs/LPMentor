@@ -1,4 +1,4 @@
-module LPMentor.Durable.Activities
+module LPMentor.Core.Activities
 
 open System
 open System.Collections.Concurrent

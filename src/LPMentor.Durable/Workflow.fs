@@ -1,25 +1,15 @@
 module LPMentor.Durable.Workflow
 
 open System
-open System.IO
-open System.Text
 open Microsoft.Azure.WebJobs
 open DurableFunctions.FSharp
-open FSharp.Control.Tasks.V2
 open System.Threading.Tasks
 open FSharp.Core
 
 open LPMentor.Core.WebhookFn.Evernote
-open LPMentor.Core.WebhookFn.EvernoteAuth
-open LPMentor.Core.TTSFn.AzureSpeech
 open LPMentor.Core.Models
-open Storage.Blob
-open Storage.Table
-open System.Collections.Concurrent
-open Evernote.EDAM.NoteStore
 open FSharp.Control.Tasks
-open System.Diagnostics
-open Activities
+open LPMentor.Core.Activities
 
 let (<!+>) activityName f = Activity.define activityName f
 let (<!->) activityName f = Activity.defineTask activityName f

@@ -101,7 +101,8 @@ let genAudioFile_ struct(fileName:string, lang, textContent) =
         return fileName
     }
 
-let mergeFiles_ struct(files:string list, mergedFileName:string) =
+let mergeInMemThen (fn:string -> Stream -> Task) 
+                   struct(files:string list, mergedFileName:string) =
     let container = getAudioContainer ()
     task {
         let ms = new MemoryStream()
@@ -109,10 +110,14 @@ let mergeFiles_ struct(files:string list, mergedFileName:string) =
             do! (container.GetBlockBlobReference(file)
                          .DownloadToStreamAsync (ms))
         ms.Position <- 0L
-        do! container.GetBlockBlobReference(mergedFileName)
-                    .UploadFromStreamAsync(ms)
+        do! (fn mergedFileName ms)
         ms.Dispose()
     }
+let pushFile mergedFileName stream =
+    let container = getAudioContainer ()
+    container.GetBlockBlobReference(mergedFileName)
+                .UploadFromStreamAsync(stream)
+let mergeFiles_ = mergeInMemThen pushFile
 
 let storeAudioInfo_ struct(ni: NoteInfo, audioFileName: string) =
     // why ValueTuple? ActivityFunction does not accept multiple parameters

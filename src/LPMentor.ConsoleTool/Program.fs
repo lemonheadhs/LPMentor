@@ -17,6 +17,7 @@ let configSample = """{
     "azureStorageConnStr": "UseDevelopmentStorage=true",
     "consumerKey": "key",
     "consumerSecret": "secret",
+    "subscriptionKey": "abc",
     "connStr": "connStr"
 }"""
 type Config = JsonProvider<configSample>
@@ -26,6 +27,7 @@ let config = Path.Combine(cwd, "appsettings.json") |> Config.Load
 Environment.SetEnvironmentVariable ("consumerKey", config.ConsumerKey)
 Environment.SetEnvironmentVariable ("consumerSecret", config.ConsumerSecret)
 Environment.SetEnvironmentVariable ("connStr", config.ConnStr)
+Environment.SetEnvironmentVariable ("subscriptionKey", config.SubscriptionKey)
 
 module Queue = begin
     let callbackQueue =
@@ -161,13 +163,20 @@ module Commands = begin
                                 meta.Section)
         segments
         |> Seq.map2 (fun name portionContent -> struct(name, meta.Lang, portionContent)) segmentNames
-        |> Seq.map (fun p ->
-            try
-                genAudioFile_ p
-                >>= ((printfn "%s") >> Task.FromResult)
-            with | e -> printfn "%s" (e.Message) |> Task.FromResult
-            )
-        |> Task.WhenAll
+        |> fun ps -> 
+            let createOne p s =
+                task {
+                    let! name = genAudioFile_ p
+                    printfn "%s" name
+                    return name
+                }
+            let mutable t = task { 
+                do! Task.Delay 50; 
+                return "" 
+            }
+            t<- Seq.fold (fun t1 p -> t1 >>= (createOne p)) t ps
+            // t.Start()
+            t
         |> fun t -> t.Wait()
 
     let trackInfo meta content mergedFileName =

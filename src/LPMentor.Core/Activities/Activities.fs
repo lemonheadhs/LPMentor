@@ -68,8 +68,7 @@ let fetchNote_ noteGuid =
         return contentResult
     }        
 
-let splitText (s:string) = 
-    let size = 8000
+let splitTextSize size (s:string) =
     let originLength = s.Length
     let mutable pointer = 0
     let sb = StringBuilder()
@@ -88,6 +87,8 @@ let splitText (s:string) =
             yield sb.ToString()
             sb.Length <- 0
     }
+
+let splitText = splitTextSize 6000
 
 let genAudioFile_ struct(fileName:string, lang, textContent) =
     let ssml = SSML.genDefaultSSML lang textContent

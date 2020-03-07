@@ -132,8 +132,16 @@ let sendTTS fmt ssmlStr =
         |> Request.setHeader (UserAgent "AzFunc LPMentor App")
         |> Request.body (BodyString ssmlStr)
     job {
-        let! resp = getResponse req
-        return resp
+        try
+            let! resp = getResponse req
+            return resp
+        with | e ->
+                let preColor = Console.ForegroundColor
+                Console.ForegroundColor <- ConsoleColor.Red
+                Console.WriteLine(e.Message)
+                Console.WriteLine(e.StackTrace)
+                Console.ForegroundColor <- preColor
+                return failwith<Response> "sendTTS failed"
     } |> Job.toAsync
 
 

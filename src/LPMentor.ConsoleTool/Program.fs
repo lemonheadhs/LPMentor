@@ -134,6 +134,12 @@ module Commands = begin
     open FSharp.Control.Tasks.V2
     open System.Threading.Tasks
 
+    let writeRedLine (s:string) =
+        let preColor = Console.ForegroundColor
+        Console.ForegroundColor <- ConsoleColor.Red
+        Console.WriteLine s
+        Console.ForegroundColor <- preColor
+
     let metadataOf (results:ParseResults<LPMArgus>) =
         let tryParseFromOptionText (s: string option) = 
             s |> Option.bind (fun txt -> 
@@ -149,8 +155,10 @@ module Commands = begin
                     then File.ReadAllText path |> Some 
                     else None
                     |> tryParseFromOptionText))
-            |> Option.defaultWith (fun _ -> failwith "can not find text or file, or meta data formate is inalid")
-        printfn "%A" (fst metadata)
+        if Option.isSome metadata then
+            printfn "%A" (fst (Option.get metadata))
+        else
+            writeRedLine "can not find text or file, or meta data formate is inalid"            
         metadata
 
     let handleAudioCreate (meta: AudioNoteMetadata) (content:string) =
@@ -166,10 +174,18 @@ module Commands = begin
         |> fun ps -> 
             let createOne p s =
                 task {
-                    let! name = genAudioFile_ p
-                    printfn "%s" name
-                    return name
-                }
+                    try
+                        let! name = genAudioFile_ p
+                        printfn "%s" name
+                        return name
+                    with | e ->
+                            writeRedLine(e.Message)
+                            if not <| isNull e.InnerException then
+                                writeRedLine(e.InnerException.Message)
+                                e.InnerException.StackTrace |> writeRedLine
+                            else writeRedLine(e.StackTrace)
+                            return e.Message
+                }       
             let mutable t = task { 
                 do! Task.Delay 50; 
                 return "" 
@@ -245,22 +261,26 @@ module Commands = begin
             printfn "unexpected case of audio upload command; src file not specified or not found"; 
             printfn "%s" (uploadArg.Parser.PrintUsage())
 
-    let handleAudioCmds (meta: AudioNoteMetadata, content:string) (audioArgs:ParseResults<AudioArgs>) =
-        match audioArgs with
-        | args when args.Contains Meta -> "do nothing here" |> ignore
-        | args when args.Contains AudioArgs.Create -> 
-            handleAudioCreate meta content
-        | args when args.Contains Merge -> 
-            handleAudioMerge meta content (args.GetResult Merge)
-        | args when args.Contains Upload -> 
-            handleAudioUpload meta content (args.GetResult Upload)
-        | args -> printfn "unexpected case of audio command"; printfn "%s" (args.Parser.PrintUsage())
+    let handleAudioCmds someMeta (audioArgs:ParseResults<AudioArgs>) =
+        if Option.isSome someMeta then
+            let (meta: AudioNoteMetadata, content:string) = Option.get someMeta
+            match audioArgs with
+            | args when args.Contains Meta -> "do nothing here" |> ignore
+            | args when args.Contains AudioArgs.Create -> 
+                handleAudioCreate meta content
+            | args when args.Contains Merge -> 
+                handleAudioMerge meta content (args.GetResult Merge)
+            | args when args.Contains Upload -> 
+                handleAudioUpload meta content (args.GetResult Upload)
+            | args -> printfn "unexpected case of audio command"; printfn "%s" (args.Parser.PrintUsage())
 
-    let handleCatalogCmds (meta: AudioNoteMetadata, content:string) (catalogArgs:ParseResults<CatalogArgs>) =
-        match catalogArgs with
-        | args when args.Contains CatalogArgs.Update -> 
-            updateCatalog_ meta.Topic |> fun t -> t.Wait()
-        | args -> printfn "unexpected case of catalog command"; printfn "%s" (args.Parser.PrintUsage())
+    let handleCatalogCmds someMeta (catalogArgs:ParseResults<CatalogArgs>) =
+        if Option.isSome someMeta then
+            let (meta: AudioNoteMetadata, content:string) = Option.get someMeta
+            match catalogArgs with
+            | args when args.Contains CatalogArgs.Update -> 
+                updateCatalog_ meta.Topic |> fun t -> t.Wait()
+            | args -> printfn "unexpected case of catalog command"; printfn "%s" (args.Parser.PrintUsage())
 
     let handleAuthCmds () =
         authenticateToEvernote() |> function

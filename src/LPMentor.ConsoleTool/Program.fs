@@ -73,6 +73,8 @@ end
 
 open Argu
 open LPMentor.Core.Models
+open System.Threading
+open System.Collections.Generic
 [<AutoOpen>]
 module Commands = begin
 // lpm audio meta -text -file | output: metadata
@@ -161,39 +163,59 @@ module Commands = begin
             writeRedLine "can not find text or file, or meta data formate is inalid"            
         metadata
 
+    let storeLocal filename (stream:Stream) =
+        task {
+            use fs = File.Create filename
+            do! stream.CopyToAsync fs
+        } :> Task
+
     let handleAudioCreate (meta: AudioNoteMetadata) (content:string) =
-        let segments = splitText content |> Seq.toList
+        let segments = splitTextSize 1000 content |> Seq.toArray
         let segmentNames = 
             [1..segments.Length]
             |> List.map (sprintf "%s/portions/%i_%s_%i.mp3"
                                 meta.Topic
                                 meta.Order
                                 meta.Section)
-        segments
-        |> Seq.map2 (fun name portionContent -> struct(name, meta.Lang, portionContent)) segmentNames
-        |> fun ps -> 
-            let createOne p s =
-                task {
+            |> List.toArray
+        let semaphore = new SemaphoreSlim(5,5)
+        printfn "%i segments" segments.Length
+
+        let stack = Stack<int>([0..(segments.Length - 1)])
+        let runOne i =
+            task {
+                do! semaphore.WaitAsync()
+                let filename = segmentNames.[i]
+                printfn "start generating %s .." filename
+                try
                     try
-                        let! name = genAudioFile_ p
-                        printfn "%s" name
-                        return name
+                        let fullname = Path.GetFullPath filename
+                        let dir = Path.GetDirectoryName fullname
+                        if not <| Directory.Exists dir then Directory.CreateDirectory dir |> ignore
+                        let! name =
+                            struct (fullname, meta.Lang, segments.[i])
+                            |> genAudioFileThen storeLocal
+                        printfn "done %s" filename
                     with | e ->
-                            writeRedLine(e.Message)
-                            if not <| isNull e.InnerException then
-                                writeRedLine(e.InnerException.Message)
-                                e.InnerException.StackTrace |> writeRedLine
-                            else writeRedLine(e.StackTrace)
-                            return e.Message
-                }       
-            let mutable t = task { 
-                do! Task.Delay 50; 
-                return "" 
-            }
-            t<- Seq.fold (fun t1 p -> t1 >>= (createOne p)) t ps
-            // t.Start()
-            t
-        |> fun t -> t.Wait()
+                        stack.Push(i)
+                        writeRedLine(e.Message)
+                        if not <| isNull e.InnerException then
+                            writeRedLine(e.InnerException.Message)
+                            e.InnerException.StackTrace |> writeRedLine
+                        else writeRedLine(e.StackTrace)
+                finally
+                    semaphore.Release() |> ignore
+            } |> ignore
+        task {
+            let mutable r = 0
+            while (stack.Count > 0 || semaphore.CurrentCount < 3) do
+                let n = stack.Count
+                for i in [1..n] do
+                    r <- r + 1
+                    if r > segments.Length then printfn "shoot %i .." r
+                    stack.Pop() |> runOne
+                do! Task.Delay 250
+        } |> fun t -> t.Wait()
 
     let trackInfo meta content mergedFileName =
         let noteInfo: NoteInfo = {
@@ -206,10 +228,7 @@ module Commands = begin
         storeAudioInfo_ struct(noteInfo, mergedFileName)
 
     let handleAudioMerge (meta: AudioNoteMetadata) (content:string) (mergeArg:ParseResults<MergeArgs>) =
-        let storeLocal filename (stream:Stream) =
-            use fs = File.Create filename
-            stream.CopyToAsync fs
-        let segments = splitText content |> Seq.toList
+        let segments = splitTextSize 1000 content |> Seq.toList
         let segmentNames = 
             [1..segments.Length]
             |> List.map (sprintf "%s/portions/%i_%s_%i.mp3"
@@ -226,9 +245,19 @@ module Commands = begin
                 do! fn x
                 do! trackInfo meta content mergedFileName
             }
+        let mergeInMemThen (fn:string -> Stream -> Task) 
+                   struct(files:string list, mergedFileName:string) =
+            task {
+                if files |> Seq.forall (File.Exists) then
+                    let ms = new MemoryStream()
+                    for file in files do
+                        use fs = File.OpenRead file
+                        do! fs.CopyToAsync ms
+                    ms.Position <- 0L
+                    do! (fn mergedFileName ms)
+                    ms.Dispose()
+            }
         match mergeArg with
-        | args when args.Contains Local_Only ->
-            mergeInMemThen storeLocal
         | args when args.Contains Local_Push ->
             mergeInMemThen (fun file ms -> 
                 task {
@@ -237,7 +266,7 @@ module Commands = begin
                     do! pushFile file ms
                 }:> Task) |> thenTrackInfo
         | _ -> 
-            (mergeInMemThen pushFile) |> thenTrackInfo
+            mergeInMemThen storeLocal
         |> fun doMerge -> doMerge struct(segmentNames, mergedFileName)
         |> fun t -> t.Wait()
 
@@ -252,9 +281,12 @@ module Commands = begin
             if not <| File.Exists src
             then None
             else File.OpenRead src |> Some)
-        |> Option.map (
-            pushFile mergedFileName >> (fun _ -> 
-            trackInfo meta content mergedFileName))
+        |> Option.map (fun fs ->
+            task {
+                do! pushFile mergedFileName fs 
+                do! trackInfo meta content mergedFileName
+                fs.Dispose()
+            })
         |> function
         | Some t -> t.Wait()
         | None -> 

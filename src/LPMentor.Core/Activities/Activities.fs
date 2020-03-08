@@ -90,17 +90,22 @@ let splitTextSize size (s:string) =
 
 let splitText = splitTextSize 6000
 
-let genAudioFile_ struct(fileName:string, lang, textContent) =
+let pushFile fileName stream =
+    let container = getAudioContainer ()
+    container.GetBlockBlobReference(fileName)
+                .UploadFromStreamAsync(stream)
+
+let genAudioFileThen (fn:string -> Stream -> Task) struct(fileName:string, lang, textContent) =
     let ssml = SSML.genDefaultSSML lang textContent
     task {
         let! resp = 
             ssml
             |> sendTTS AudioOutputFormats.Audio_16k_128k_mono_mp3
-        let container = getAudioContainer ()
-        do! container.GetBlockBlobReference(fileName)
-                     .UploadFromStreamAsync(resp.body)
+        do! (fn fileName resp.body)
         return fileName
     }
+
+let genAudioFile_ = genAudioFileThen pushFile
 
 let mergeInMemThen (fn:string -> Stream -> Task) 
                    struct(files:string list, mergedFileName:string) =
@@ -114,10 +119,6 @@ let mergeInMemThen (fn:string -> Stream -> Task)
         do! (fn mergedFileName ms)
         ms.Dispose()
     }
-let pushFile mergedFileName stream =
-    let container = getAudioContainer ()
-    container.GetBlockBlobReference(mergedFileName)
-                .UploadFromStreamAsync(stream)
 let mergeFiles_ = mergeInMemThen pushFile
 
 let storeAudioInfo_ struct(ni: NoteInfo, audioFileName: string) =

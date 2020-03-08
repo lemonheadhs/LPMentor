@@ -100,16 +100,22 @@ module Commands = begin
                 | File _ -> "the file path of note"
     and AudioArgs =
         | [<CliPrefix(CliPrefix.None)>] Meta
-        | [<CliPrefix(CliPrefix.None)>] Create
+        | [<CliPrefix(CliPrefix.None)>] Create of ParseResults<CreateArgs>
         | [<CliPrefix(CliPrefix.None)>] Merge of ParseResults<MergeArgs>
         | [<CliPrefix(CliPrefix.None)>] Upload of ParseResults<UploadArgs>
     with
         interface IArgParserTemplate with
             member s.Usage = s |> function
                 | Meta -> "inspect meta info in note content"
-                | Create -> "create audio portion files"
+                | Create _ -> "create audio portion files"
                 | Merge _ -> "merge audio portion files (the push file)"
                 | Upload _ -> "upload local audio file"
+    and CreateArgs =
+        | [<AltCommandLine("-r")>] Rerun
+    with 
+        interface IArgParserTemplate with
+            member s.Usage = s |> function
+                | Rerun -> "rerun create to fillup missing portion files"
     and MergeArgs =
         | [<AltCommandLine("-lo")>] Local_Only
         | [<AltCommandLine("-lp")>] Local_Push
@@ -169,7 +175,7 @@ module Commands = begin
             do! stream.CopyToAsync fs
         } :> Task
 
-    let handleAudioCreate (meta: AudioNoteMetadata) (content:string) =
+    let handleAudioCreate (meta: AudioNoteMetadata) (content:string) (createArgs:ParseResults<CreateArgs>) =
         let segments = splitTextSize 1000 content |> Seq.toArray
         let segmentNames = 
             [1..segments.Length]
@@ -178,10 +184,19 @@ module Commands = begin
                                 meta.Order
                                 meta.Section)
             |> List.toArray
-        let semaphore = new SemaphoreSlim(5,5)
+        let concurrentNum = 5
+        let semaphore = new SemaphoreSlim(concurrentNum,concurrentNum)
         printfn "%i segments" segments.Length
 
-        let stack = Stack<int>([0..(segments.Length - 1)])
+        let stack = 
+            if createArgs.Contains Rerun then
+                seq {
+                    for i in [0..(segments.Length - 1)] do
+                        if not <| File.Exists (segmentNames.[i]) then
+                            yield i
+                } |> Stack
+            else 
+                Stack<int>([0..(segments.Length - 1)])
         let runOne i =
             task {
                 do! semaphore.WaitAsync()
@@ -208,7 +223,7 @@ module Commands = begin
             } |> ignore
         task {
             let mutable r = 0
-            while (stack.Count > 0 || semaphore.CurrentCount < 3) do
+            while (stack.Count > 0 || semaphore.CurrentCount < concurrentNum) do
                 let n = stack.Count
                 for i in [1..n] do
                     r <- r + 1
@@ -299,7 +314,7 @@ module Commands = begin
             match audioArgs with
             | args when args.Contains Meta -> "do nothing here" |> ignore
             | args when args.Contains AudioArgs.Create -> 
-                handleAudioCreate meta content
+                handleAudioCreate meta content (args.GetResult AudioArgs.Create)
             | args when args.Contains Merge -> 
                 handleAudioMerge meta content (args.GetResult Merge)
             | args when args.Contains Upload -> 
